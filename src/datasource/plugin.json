@@ -1,0 +1,24 @@
+{
+  "type": "datasource",
+  "name": "KalDb",
+  "id": "slack-kaldb-app-backend-datasource",
+  "category": "logging",
+  "metrics": true,
+  "backend": true,
+  "executable": "gpx_slack_kaldb_app_datasource_backend",
+  "info": {
+    "description": "KalDb integration and data source",
+    "author": {
+      "name": "Slack"
+    },
+    "keywords": ["KalDb"],
+    "logos": {
+      "small": "img/logo.svg",
+      "large": "img/logo.svg"
+    },
+    "links": [],
+    "screenshots": [],
+    "version": "%VERSION%",
+    "updated": "%TODAY%"
+  }
+}
