@@ -296,7 +296,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
       <CustomScrollbar autoHeightMin={'100%'}>
         <PageToolbar
           pageIcon="compass"
-          parent={'KalDb'}
+          parent={'KalDB'}
           title={'Explore'}
           className={cx(styles.pageToolbar)}
           onClickParent={() => {}}

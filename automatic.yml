@@ -1,0 +1,29 @@
+apiVersion: 1
+
+deleteDatasources:
+  - name: KalDB
+    orgId: 1
+
+apps:
+  - type: slack-kaldb-app
+
+datasources:
+  - name: KalDB Query [ES]
+    type: elasticsearch
+    access: proxy
+    url: "host.docker.internal:8081"
+    password:
+    user:
+    database: testindex
+    basicAuth: false
+    basicAuthUser:
+    basicAuthPassword:
+    withCredentials:
+    isDefault: true
+    jsonData:
+      timeField: "@timestamp"
+      esVersion: 7.0.0
+      maxConcurrentShardRequests: 5
+      logMessageField: "_source"
+      logLevelField: ""
+    version: 1

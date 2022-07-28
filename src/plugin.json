@@ -1,15 +1,15 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
-  "name": "KalDb",
+  "name": "KalDB",
   "id": "slack-kaldb-app",
   "executable": "gpx_slack_kaldb_app_datasource_backend",
   "info": {
-    "description": "Adds support for the KalDb datastore",
+    "description": "Grafana KalDB App",
     "author": {
       "name": "Slack"
     },
-    "keywords": ["KalDb"],
+    "keywords": ["KalDB"],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
