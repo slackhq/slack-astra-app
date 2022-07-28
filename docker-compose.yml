@@ -7,7 +7,7 @@ services:
       - '3000:3000'
     volumes:
       - ./provisioning:/etc/grafana/provisioning
-      - ./:/var/lib/grafana/plugins/slack-kaldb-app
+      - ./dist:/var/lib/grafana/plugins/slack-kaldb-app
     environment:
       GF_LOG_MODE: "console file"
       GF_LOG_LEVEL: "debug"
