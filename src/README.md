@@ -1,8 +1,8 @@
-# KalDb Grafana App
+# KalDB Grafana App
 
-This project extends functionality provided by Grafana to support integration with the
-[KalDb](https://github.com/slackhq/kaldb) datastore. The app includes a datasource and an improved explore
-interface to support features such as full-range histograms.
+This Grafana plugin adds support for [KalDB](https://github.com/slackhq/kaldb), and includes both a datasource and
+simplified explore interface.
 
-Once installed a new datasource type will be available, and the KalDb explore icon will appear on the left side of the 
-Grafana UI.
+To get started [install](https://grafana.com/docs/grafana/latest/plugins/installation/) this app, then enable it from
+the Grafana plugins page under "KalDB by Slack". Once installed a new datasource type will be available, and the KalDB
+explore icon will appear on the left side of the Grafana UI.
