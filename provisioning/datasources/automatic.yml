@@ -4,9 +4,6 @@ deleteDatasources:
   - name: KalDB
     orgId: 1
 
-apps:
-  - type: slack-kaldb-app
-
 datasources:
   - name: KalDB Query [ES]
     type: elasticsearch
