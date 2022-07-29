@@ -110,9 +110,19 @@ There are more details about processes and workflow in the [Maintainer's Guide](
    mage -l
    ```
 
+### Releases
+
+Releases are performed with Github actions, and automatically run when a tag matching the format of `v*.*.*` are
+published. To successfully perform a new release you should:
+
+* Update the `package.json` version to the new target version
+* Document any new release notes in `CHANGELOG.md` along with the new version
+* Push a new git tag matching the format `v*.*.*` - note that you should _not_ create a release at this point in Github
+* Upon publishing a new git tag the `release` Github action will run, building and publishing a new _draft_ release
+* Using the Github UI, go to the releases and publish the release to make the assets available for download
+
 ## Learn more
 
-- [Build a app plugin tutorial](https://grafana.com/tutorials/build-a-app-plugin)
 - [Build a data source backend plugin tutorial](https://grafana.com/tutorials/build-a-data-source-backend-plugin)
 - [Grafana documentation](https://grafana.com/docs/)
 - [Grafana Tutorials](https://grafana.com/tutorials/) - Grafana Tutorials are step-by-step guides that help you make the most of Grafana
