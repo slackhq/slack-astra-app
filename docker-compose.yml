@@ -1,7 +1,7 @@
 version: "3"
 services:
   grafana:
-    image: 'grafana/grafana:8.0.3'
+    image: 'grafana/grafana:8.5.10'
     container_name: slack_kaldb_app_grafana
     ports:
       - '3000:3000'
