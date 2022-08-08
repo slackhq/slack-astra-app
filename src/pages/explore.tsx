@@ -188,7 +188,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
   const loadData = (callback: Dispatch<SetStateAction<any>>) => {
     getDataSourceSrv()
       .get(intState.dataSource)
-      .then(function (datasourceApi) {
+      .then(function(datasourceApi) {
         const interval = rangeUtil.calculateInterval(intState.timeRange, 30).interval;
         const metrics = datasourceApi
           .query({
@@ -237,7 +237,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
           // @ts-ignore
           .toPromise();
 
-        Promise.all([metrics, logs]).then(function (data) {
+        Promise.all([metrics, logs]).then(function(data) {
           const metricsResponse = data[0];
           const logsResponse = data[1];
 
@@ -277,7 +277,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
 
   const load = () => {
     setLoading(true);
-    loadData((data) => {
+    loadData(data => {
       setResults(data);
       setLoading(false);
     });
@@ -297,13 +297,14 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
         parent={'KalDB'}
         title={'Explore'}
         className={cx(styles.pageToolbar)}
+        //@ts-ignore
         onClickParent={() => {}}
         leftItems={[
           <DataSourcePicker
             key={'datasourcepicker'}
             type={['slack-kaldb-app-backend-datasource']}
             current={intState.dataSource}
-            onChange={(dataSource) => {
+            onChange={dataSource => {
               setSynchronizedState({
                 dataSource: dataSource.name,
               });
@@ -315,12 +316,12 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
         <TimeRangePicker
           value={intState.timeRange}
           // isSynced={true}
-          onChange={(event) => {
+          onChange={event => {
             setSynchronizedState({
               timeRange: event,
             });
           }}
-          onChangeTimeZone={(event) => {
+          onChangeTimeZone={event => {
             //console.log(event);
           }}
           onMoveBackward={() => {
@@ -344,7 +345,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
             variant="primary"
             icon="sync"
             disabled={loading}
-            onClick={(event) => {
+            onClick={event => {
               load();
             }}
           >
@@ -360,7 +361,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                 <QueryField
                   query={intState.queryString}
                   onBlur={() => {}}
-                  onChange={(query) => {
+                  onChange={query => {
                     setSynchronizedState({
                       queryString: query,
                     });
@@ -430,7 +431,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                             timeZone={getTimeZone()}
                           >
                             {(config, alignedDataFrame) => {
-                              config.addHook('draw', (u) => {
+                              config.addHook('draw', u => {
                                 let { top, height } = u.bbox;
 
                                 // @ts-ignore
@@ -458,7 +459,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                                 <>
                                   <ZoomPlugin
                                     config={config}
-                                    onZoom={(range) => {
+                                    onZoom={range => {
                                       setSynchronizedState({
                                         timeRange: rangeUtil.convertRawToRange({
                                           from: dateTimeForTimeZone(getTimeZone(), range.from),
@@ -497,26 +498,25 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                             }{' '}
                             of 500 limit
                           </div>
-                          {
-                            // @ts-ignore
-                            results.logs.length > 0 ? (
-                              <LogRows
-                                // @ts-ignore
-                                logRows={results.logs}
-                                dedupStrategy={LogsDedupStrategy.none}
-                                showLabels={true}
-                                showTime={true}
-                                wrapLogMessage={true}
-                                timeZone={getTimeZone()}
-                                enableLogDetails={true}
-                                showContextToggle={() => {
-                                  return false;
-                                }}
-                              />
-                            ) : (
-                              <EmptySearchResult>Could not find anything matching your query</EmptySearchResult>
-                            )
-                          }
+                          {// @ts-ignore
+                          results.logs.length > 0 ? (
+                            <LogRows
+                              // @ts-ignore
+                              logRows={results.logs}
+                              dedupStrategy={LogsDedupStrategy.none}
+                              showLabels={true}
+                              showTime={true}
+                              wrapLogMessage={true}
+                              timeZone={getTimeZone()}
+                              enableLogDetails={true}
+                              showContextToggle={() => {
+                                return false;
+                              }}
+                              prettifyLogMessage={true}
+                            />
+                          ) : (
+                            <EmptySearchResult>Could not find anything matching your query</EmptySearchResult>
+                          )}
                         </ErrorBoundaryAlert>
                       );
                     }}
