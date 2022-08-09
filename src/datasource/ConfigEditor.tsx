@@ -1,11 +1,11 @@
 import React, { ChangeEvent, PureComponent } from 'react';
 import { LegacyForms } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
-import { KalDbDataSourceOptions } from './types';
+import { OpenSearchOptions } from './types';
 
 const { FormField } = LegacyForms;
 
-interface Props extends DataSourcePluginOptionsEditorProps<KalDbDataSourceOptions> {}
+interface Props extends DataSourcePluginOptionsEditorProps<OpenSearchOptions> {}
 
 interface State {}
 
@@ -32,6 +32,7 @@ export class ConfigEditor extends PureComponent<Props, State> {
             labelWidth={6}
             inputWidth={20}
             onChange={this.onUrlChange}
+            //@ts-ignore
             value={jsonData.url || ''}
             placeholder="http://localhost:9200"
             tooltip="This URL must be accessible from the grafana backend/server"

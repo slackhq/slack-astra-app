@@ -13,10 +13,5 @@ explore icon will appear on the left side of the Grafana UI.
 
 ![KalDB explore](src/img/kaldb_explore.png)
 
-## KalDB vs Elasticsearch datasource
-⚠️ The KalDB datasource is not currently stable, so prefer using the 
-[Elasticsearch API compatibility](https://github.com/slackhq/kaldb/blob/a6582a5f1e73ef69058b6a51b602328873498ab0/kaldb/src/main/java/com/slack/kaldb/elasticsearchApi/ElasticsearchApiService.java) 
-provided by KalDB when configuring a datasource.
-
 ## Other resources
 * [Getting started with development](.github/CONTRIBUTING.md#getting-started-with-development)

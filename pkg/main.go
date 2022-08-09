@@ -5,7 +5,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-starter-datasource-backend/pkg/plugin"
+	"github.com/slackhq/slack-kaldb-app/pkg/kaldb"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	// from Grafana to create different instances of KalDbDatasource (per datasource
 	// ID). When datasource configuration changed Dispose method will be called and
 	// new datasource instance created using NewKalDbDatasource factory.
-	if err := datasource.Manage("slack-kaldb-app-backend-datasource", plugin.NewKalDbDatasource, datasource.ManageOpts{}); err != nil {
+	if err := datasource.Manage("slack-kaldb-app-backend-datasource", kaldb.NewKalDbDatasource, datasource.ManageOpts{}); err != nil {
 		log.DefaultLogger.Error(err.Error())
 		os.Exit(1)
 	}

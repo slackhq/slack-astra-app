@@ -14,9 +14,7 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "links": [
-      { "name": "Github", "url": "https://github.com/slackhq/kaldb" }
-    ],
+    "links": [{ "name": "Github", "url": "https://github.com/slackhq/kaldb" }],
     "screenshots": [],
     "version": "%VERSION%",
     "updated": "%TODAY%"

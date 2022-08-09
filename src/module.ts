@@ -5,4 +5,4 @@ import { RootPage } from './RootPage';
 import { KalDbSettings } from './types';
 export { KalDbConfigCtrl as ConfigCtrl };
 
-export const plugin = new AppPlugin<KalDbSettings>().setRootPage(RootPage as unknown as ComponentClass<AppRootProps>);
+export const plugin = new AppPlugin<KalDbSettings>().setRootPage((RootPage as unknown) as ComponentClass<AppRootProps>);
