@@ -490,6 +490,12 @@ export class OpenSearchResponse {
           if (isLogsRequest) {
             series = addPreferredVisualisationType(series, 'logs');
           }
+
+          // Add shard metadata if available
+          if (response._shards) {
+            series = addCustomMetadata(series, 'shards', response._shards);
+          }
+
           const target = this.targets[n];
           series.refId = target.refId;
           dataFrame.push(series);
@@ -518,6 +524,11 @@ export class OpenSearchResponse {
           // When log results, show aggregations only in graph. Log fields are then going to be shown in table.
           if (isLogsRequest) {
             series = addPreferredVisualisationType(series, 'graph');
+          }
+
+          // Add shard metadata if available
+          if (response._shards) {
+            series = addCustomMetadata(series, 'shards', response._shards);
           }
 
           series.refId = target.refId;
@@ -556,7 +567,14 @@ export class OpenSearchResponse {
         this.nameSeries(tmpSeriesList, target);
 
         for (let y = 0; y < tmpSeriesList.length; y++) {
-          seriesList.push(tmpSeriesList[y]);
+          let series = tmpSeriesList[y];
+
+          // Add shard metadata if available
+          if (response._shards) {
+            series = addCustomMetadata(series, 'shards', response._shards);
+          }
+
+          seriesList.push(series);
         }
 
         if (table.rows.length > 0) {
@@ -822,5 +840,15 @@ const addPreferredVisualisationType = (series: any, type: PreferredVisualisation
         preferredVisualisationType: type,
       });
 
+  return s;
+};
+
+const addCustomMetadata = (series: any, key: string, value: any) => {
+  let s = series;
+  s.meta
+    ? (s.meta[key] = value)
+    : (s.meta = {
+        [key]: value,
+      });
   return s;
 };

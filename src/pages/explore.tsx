@@ -178,6 +178,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
   const [results, setResults] = useState({
     metrics: null,
     logs: null,
+    metadata: null,
   });
 
   const theme = useTheme();
@@ -190,7 +191,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
       .get(intState.dataSource)
       .then(function(datasourceApi) {
         const interval = rangeUtil.calculateInterval(intState.timeRange, 30).interval;
-        const metrics = datasourceApi
+        datasourceApi
           .query({
             range: intState.timeRange,
             scopedVars: {
@@ -208,18 +209,6 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                   },
                 ],
               },
-            ],
-          })
-          // @ts-ignore
-          .toPromise();
-
-        const logs = datasourceApi
-          .query({
-            range: intState.timeRange,
-            scopedVars: {
-              __interval: { text: interval, value: interval },
-            },
-            targets: [
               {
                 // @ts-ignore
                 format: 'logs',
@@ -235,43 +224,50 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
             ],
           })
           // @ts-ignore
-          .toPromise();
+          .toPromise()
+          .then(function(response) {
+            const metricsResponse = response.data[0];
+            const dataQueryResponseData = response.data[1];
 
-        Promise.all([metrics, logs]).then(function(data) {
-          const metricsResponse = data[0];
-          const logsResponse = data[1];
+            const metadata = {
+              metrics: {
+                shards: metricsResponse.meta.shards,
+              },
+              logs: {
+                shards: dataQueryResponseData.meta.shards,
+              },
+            };
 
-          // parse metrics
-          const series = toDataFrame(metricsResponse.data[0]);
+            // parse metrics
+            const series = toDataFrame(metricsResponse);
 
-          // parse logs
-          const dataQueryResponseData = logsResponse.data;
-
-          let tmpLogRows = [];
-          if (dataQueryResponseData[0] && typeof dataQueryResponseData[0].get === 'function') {
-            for (let i = 0; i < dataQueryResponseData[0].length; i++) {
-              tmpLogRows.push({
-                // uid: Date.now(),
-                entryFieldIndex: 0,
-                rowIndex: i,
-                dataFrame: dataQueryResponseData[0],
-                labels: [],
-                entry: JSON.stringify(dataQueryResponseData[0].get(i)._source),
-                // @ts-ignore
-                timeEpochMs: new Date(dataQueryResponseData[0].get(i)[datasourceApi.timeField]).valueOf(),
-                hasAnsi: true,
-                // @ts-ignore
-                logLevel: datasourceApi.logLevelField,
-                raw: formatLogLine(dataQueryResponseData[0].get(i)._source),
-              });
+            // parse logs
+            let tmpLogRows = [];
+            if (dataQueryResponseData && typeof dataQueryResponseData.get === 'function') {
+              for (let i = 0; i < dataQueryResponseData.length; i++) {
+                tmpLogRows.push({
+                  // uid: Date.now(),
+                  entryFieldIndex: 0,
+                  rowIndex: i,
+                  dataFrame: dataQueryResponseData,
+                  labels: [],
+                  entry: JSON.stringify(dataQueryResponseData.get(i)._source),
+                  // @ts-ignore
+                  timeEpochMs: new Date(dataQueryResponseData.get(i)[datasourceApi.timeField]).valueOf(),
+                  hasAnsi: true,
+                  // @ts-ignore
+                  logLevel: datasourceApi.logLevelField,
+                  raw: formatLogLine(dataQueryResponseData.get(i)._source),
+                });
+              }
             }
-          }
 
-          callback({
-            metrics: series,
-            logs: tmpLogRows,
+            callback({
+              metrics: series,
+              logs: tmpLogRows,
+              metadata: metadata,
+            });
           });
-        });
       });
   };
 
@@ -417,7 +413,14 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                     {(innerWidth, innerHeight) => {
                       return (
                         <ErrorBoundaryAlert>
-                          <div className={styles.infoText}>{totalHits.toLocaleString()} hits</div>
+                          <div className={styles.infoText}>
+                            <span>{totalHits.toLocaleString()} hits</span>
+                            <span style={{ float: 'right' }}>
+                              {results.metadata.metrics.shards.total} shards, {results.metadata.metrics.shards.failed}{' '}
+                              failed
+                            </span>
+                          </div>
+
                           <TimeSeries
                             height={innerHeight - 50}
                             width={innerWidth}
@@ -492,11 +495,16 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                       return (
                         <ErrorBoundaryAlert>
                           <div className={styles.infoText}>
-                            {
-                              // @ts-ignore
-                              results.logs.length
-                            }{' '}
-                            of 500 limit
+                            <span>
+                              {
+                                // @ts-ignore
+                                results.logs.length
+                              }{' '}
+                              of 500 limit
+                            </span>
+                            <span style={{ float: 'right' }}>
+                              {results.metadata.logs.shards.total} shards, {results.metadata.logs.shards.failed} failed
+                            </span>
                           </div>
                           {// @ts-ignore
                           results.logs.length > 0 ? (
