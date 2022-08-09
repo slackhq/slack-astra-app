@@ -1,6 +1,5 @@
 import {
   ButtonGroup,
-  CustomScrollbar,
   DrawStyle,
   EmptySearchResult,
   ErrorBoundaryAlert,
@@ -26,17 +25,17 @@ import {
   AppEvents,
   applyFieldOverrides,
   AppRootProps,
+  dateTimeForTimeZone,
   dateTimeParse,
   FieldColorModeId,
   getDefaultTimeRange,
+  getTimeZone,
   GrafanaTheme,
   KeyValue,
   LogsDedupStrategy,
   rangeUtil,
   TimeRange,
   toDataFrame,
-  dateTimeForTimeZone,
-  getTimeZone,
   toUtc,
 } from '@grafana/data';
 
@@ -140,13 +139,12 @@ const getShiftedTimeRange = (direction: number, origRange: TimeRange): TimeRange
 };
 
 export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
-  console.log(getDataSourceSrv().getList());
   const [intState, setIntState] = useState({
     queryString: query.queryString ? query.queryString : '',
     dataSource: query.dataSource
       ? query.dataSource
       : getDataSourceSrv().getList({
-          type: ['elasticsearch', 'slack-kaldb-app-backend-datasource'],
+          type: ['slack-kaldb-app-backend-datasource'],
         })[0].name,
     timeRange:
       query.from && query.to
@@ -259,7 +257,8 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                 dataFrame: dataQueryResponseData[0],
                 labels: [],
                 entry: JSON.stringify(dataQueryResponseData[0].get(i)._source),
-                timeEpochMs: dataQueryResponseData[0].get(i).sort[0],
+                // @ts-ignore
+                timeEpochMs: new Date(dataQueryResponseData[0].get(i)[datasourceApi.timeField]).valueOf(),
                 hasAnsi: true,
                 // @ts-ignore
                 logLevel: datasourceApi.logLevelField,
@@ -293,245 +292,241 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
 
   return (
     <>
-      <CustomScrollbar autoHeightMin={'100%'}>
-        <PageToolbar
-          pageIcon="compass"
-          parent={'KalDB'}
-          title={'Explore'}
-          className={cx(styles.pageToolbar)}
-          onClickParent={() => {}}
-          leftItems={[
-            <DataSourcePicker
-              key={'datasourcepicker'}
-              type={['elasticsearch', 'slack-kaldb-app-backend-datasource']}
-              current={intState.dataSource}
-              onChange={(dataSource) => {
-                setSynchronizedState({
-                  dataSource: dataSource.name,
-                });
-              }}
-            />,
-          ]}
-        >
-          <ToolbarButton icon="share-alt" onClick={() => copyStringToClipboard(window.location.href)} />
-          <TimeRangePicker
-            value={intState.timeRange}
-            // isSynced={true}
-            onChange={(event) => {
+      <PageToolbar
+        pageIcon="compass"
+        parent={'KalDB'}
+        title={'Explore'}
+        className={cx(styles.pageToolbar)}
+        onClickParent={() => {}}
+        leftItems={[
+          <DataSourcePicker
+            key={'datasourcepicker'}
+            type={['slack-kaldb-app-backend-datasource']}
+            current={intState.dataSource}
+            onChange={(dataSource) => {
               setSynchronizedState({
-                timeRange: event,
+                dataSource: dataSource.name,
               });
+            }}
+          />,
+        ]}
+      >
+        <ToolbarButton icon="share-alt" onClick={() => copyStringToClipboard(window.location.href)} />
+        <TimeRangePicker
+          value={intState.timeRange}
+          // isSynced={true}
+          onChange={(event) => {
+            setSynchronizedState({
+              timeRange: event,
+            });
+          }}
+          onChangeTimeZone={(event) => {
+            //console.log(event);
+          }}
+          onMoveBackward={() => {
+            setSynchronizedState({
+              timeRange: getShiftedTimeRange(-1, intState.timeRange),
+            });
+          }}
+          onMoveForward={() => {
+            setSynchronizedState({
+              timeRange: getShiftedTimeRange(1, intState.timeRange),
+            });
+          }}
+          onZoom={() => {
+            setSynchronizedState({
+              timeRange: getZoomedTimeRange(intState.timeRange, 2),
+            });
+          }}
+        />
+        <ButtonGroup>
+          <ToolbarButton
+            variant="primary"
+            icon="sync"
+            disabled={loading}
+            onClick={(event) => {
               load();
             }}
-            onChangeTimeZone={(event) => {
-              //console.log(event);
-            }}
-            onMoveBackward={() => {
-              setSynchronizedState({
-                timeRange: getShiftedTimeRange(-1, intState.timeRange),
-              });
-            }}
-            onMoveForward={() => {
-              setSynchronizedState({
-                timeRange: getShiftedTimeRange(1, intState.timeRange),
-              });
-            }}
-            onZoom={() => {
-              setSynchronizedState({
-                timeRange: getZoomedTimeRange(intState.timeRange, 2),
-              });
-            }}
-          />
-          <ButtonGroup>
-            <ToolbarButton
-              variant="primary"
-              icon="sync"
-              disabled={loading}
-              onClick={(event) => {
-                load();
-              }}
-            >
-              Run query
-            </ToolbarButton>
-          </ButtonGroup>
-        </PageToolbar>
-        <div className="explore-container">
-          <div className={cx('panel-container', styles.queryContainer)}>
-            <InlineFieldRow>
-              <InlineField label="Query" labelWidth={17} grow>
-                <>
-                  <QueryField
-                    query={intState.queryString}
-                    onBlur={() => {}}
-                    onChange={(query) => {
-                      console.log('querystring', query);
-                      setSynchronizedState({
-                        queryString: query,
-                      });
-                    }}
-                    placeholder="Lucene Query"
-                    portalOrigin="elasticsearch"
-                  />
-                </>
-              </InlineField>
-            </InlineFieldRow>
-          </div>
+          >
+            Run query
+          </ToolbarButton>
+        </ButtonGroup>
+      </PageToolbar>
+      <div className="explore-container">
+        <div className={cx('panel-container', styles.queryContainer)}>
+          <InlineFieldRow>
+            <InlineField label="Query" labelWidth={17} grow>
+              <>
+                <QueryField
+                  query={intState.queryString}
+                  onBlur={() => {}}
+                  onChange={(query) => {
+                    setSynchronizedState({
+                      queryString: query,
+                    });
+                  }}
+                  placeholder="Lucene Query"
+                  portalOrigin="elasticsearch"
+                />
+              </>
+            </InlineField>
+          </InlineFieldRow>
+        </div>
 
-          {!loading && results.metrics != null ? (
-            <div className={cx(styles.timeseriesChart)}>
-              <AutoSizer disableHeight>
-                {({ width }) => {
-                  const series = results.metrics;
+        {!loading && results.metrics != null ? (
+          <div className={cx(styles.timeseriesChart)}>
+            <AutoSizer disableHeight>
+              {({ width }) => {
+                const series = results.metrics;
 
+                // @ts-ignore
+                series.fields[1].config.custom = {
+                  drawStyle: DrawStyle.Bars,
+                  fillOpacity: 100,
+                  pointSize: 5,
+                  lineWidth: 0,
+                };
+                // @ts-ignore
+                series.fields[1].config.color = { mode: FieldColorModeId.PaletteClassic };
+                // @ts-ignore
+                series.fields[1].config.unit = 'short';
+
+                const metricsResults = applyFieldOverrides({
                   // @ts-ignore
-                  series.fields[1].config.custom = {
-                    drawStyle: DrawStyle.Bars,
-                    fillOpacity: 100,
-                    pointSize: 5,
-                    lineWidth: 0,
-                  };
+                  data: [series],
+                  fieldConfig: {
+                    overrides: [],
+                    defaults: {},
+                  },
                   // @ts-ignore
-                  series.fields[1].config.color = { mode: FieldColorModeId.PaletteClassic };
-                  // @ts-ignore
-                  series.fields[1].config.unit = 'short';
+                  theme,
+                  replaceVariables: (value: string) => value,
+                });
 
-                  const metricsResults = applyFieldOverrides({
-                    // @ts-ignore
-                    data: [series],
-                    fieldConfig: {
-                      overrides: [],
-                      defaults: {},
-                    },
-                    // @ts-ignore
-                    theme,
-                    replaceVariables: (value: string) => value,
-                  });
+                let totalHits = 0;
 
-                  let totalHits = 0;
+                // @ts-ignore
+                const valueField = series.fields.find((field: any) => field.name === 'Value');
+                if (valueField !== undefined) {
+                  totalHits = valueField.state.calcs.sum;
+                }
 
-                  // @ts-ignore
-                  const valueField = series.fields.find((field: any) => field.name === 'Value');
-                  if (valueField !== undefined) {
-                    totalHits = valueField.state.calcs.sum;
-                  }
+                return (
+                  <PanelChrome height={350} width={width} title={'Graph'}>
+                    {(innerWidth, innerHeight) => {
+                      return (
+                        <ErrorBoundaryAlert>
+                          <div className={styles.infoText}>{totalHits.toLocaleString()} hits</div>
+                          <TimeSeries
+                            height={innerHeight - 50}
+                            width={innerWidth}
+                            frames={metricsResults}
+                            legend={{
+                              displayMode: LegendDisplayMode.List,
+                              placement: 'bottom',
+                              calcs: [],
+                            }}
+                            timeRange={intState.timeRange}
+                            timeZone={getTimeZone()}
+                          >
+                            {(config, alignedDataFrame) => {
+                              config.addHook('draw', (u) => {
+                                let { top, height } = u.bbox;
 
-                  return (
-                    <PanelChrome height={350} width={width} title={'Graph'}>
-                      {(innerWidth, innerHeight) => {
-                        return (
-                          <ErrorBoundaryAlert>
-                            <div className={styles.infoText}>{totalHits.toLocaleString()} hits</div>
-                            <TimeSeries
-                              height={innerHeight - 50}
-                              width={innerWidth}
-                              frames={metricsResults}
-                              legend={{
-                                displayMode: LegendDisplayMode.List,
-                                placement: 'bottom',
-                                calcs: [],
-                              }}
-                              timeRange={intState.timeRange}
-                              timeZone={getTimeZone()}
-                            >
-                              {(config, alignedDataFrame) => {
-                                config.addHook('draw', (u) => {
-                                  let { top, height } = u.bbox;
-
-                                  // @ts-ignore
-                                  if (results.logs && results.logs.length === 500) {
-                                    const maxTime = intState.timeRange.to.valueOf();
-
-                                    const minLogTime = Math.min.apply(
-                                      Math,
-                                      // @ts-ignore
-                                      results.logs.map((logLine: { timeEpochMs: any }) => logLine.timeEpochMs)
-                                    );
-
-                                    const calcLeft = u.valToPos(minLogTime, 'x', true);
-                                    const calcWidth = u.valToPos(maxTime, 'x', true) - calcLeft;
-
-                                    u.ctx.save();
-                                    u.ctx.fillStyle = 'rgb(100, 100, 100, 0.2)';
-                                    u.ctx.globalCompositeOperation = 'destination-over';
-                                    u.ctx.fillRect(calcLeft, top, calcWidth, height);
-                                    u.ctx.restore();
-                                  }
-                                });
-
-                                return (
-                                  <>
-                                    <ZoomPlugin
-                                      config={config}
-                                      onZoom={(range) => {
-                                        setSynchronizedState({
-                                          timeRange: rangeUtil.convertRawToRange({
-                                            from: dateTimeForTimeZone(getTimeZone(), range.from),
-                                            to: dateTimeForTimeZone(getTimeZone(), range.to),
-                                          }),
-                                        });
-                                      }}
-                                    />
-                                    <TooltipPlugin config={config} data={alignedDataFrame} timeZone={getTimeZone()} />
-                                  </>
-                                );
-                              }}
-                            </TimeSeries>
-                          </ErrorBoundaryAlert>
-                        );
-                      }}
-                    </PanelChrome>
-                  );
-                }}
-              </AutoSizer>
-            </div>
-          ) : null}
-          {!loading && results.logs != null ? (
-            <div className={cx(styles.logLines)}>
-              <AutoSizer disableHeight>
-                {({ height, width }) => {
-                  return (
-                    <PanelChrome height={height} width={width} title={`Logs`}>
-                      {(innerWidth, innerHeight) => {
-                        return (
-                          <ErrorBoundaryAlert>
-                            <div className={styles.infoText}>
-                              {
                                 // @ts-ignore
-                                results.logs.length
-                              }{' '}
-                              of 500 limit
-                            </div>
+                                if (results.logs && results.logs.length === 500) {
+                                  const maxTime = intState.timeRange.to.valueOf();
+
+                                  const minLogTime = Math.min.apply(
+                                    Math,
+                                    // @ts-ignore
+                                    results.logs.map((logLine: { timeEpochMs: any }) => logLine.timeEpochMs)
+                                  );
+
+                                  const calcLeft = u.valToPos(minLogTime, 'x', true);
+                                  const calcWidth = u.valToPos(maxTime, 'x', true) - calcLeft;
+
+                                  u.ctx.save();
+                                  u.ctx.fillStyle = 'rgb(100, 100, 100, 0.2)';
+                                  u.ctx.globalCompositeOperation = 'destination-over';
+                                  u.ctx.fillRect(calcLeft, top, calcWidth, height);
+                                  u.ctx.restore();
+                                }
+                              });
+
+                              return (
+                                <>
+                                  <ZoomPlugin
+                                    config={config}
+                                    onZoom={(range) => {
+                                      setSynchronizedState({
+                                        timeRange: rangeUtil.convertRawToRange({
+                                          from: dateTimeForTimeZone(getTimeZone(), range.from),
+                                          to: dateTimeForTimeZone(getTimeZone(), range.to),
+                                        }),
+                                      });
+                                    }}
+                                  />
+                                  <TooltipPlugin config={config} data={alignedDataFrame} timeZone={getTimeZone()} />
+                                </>
+                              );
+                            }}
+                          </TimeSeries>
+                        </ErrorBoundaryAlert>
+                      );
+                    }}
+                  </PanelChrome>
+                );
+              }}
+            </AutoSizer>
+          </div>
+        ) : null}
+        {!loading && results.logs != null ? (
+          <div className={cx(styles.logLines)}>
+            <AutoSizer disableHeight>
+              {({ height, width }) => {
+                return (
+                  <PanelChrome height={height} width={width} title={`Logs`}>
+                    {(innerWidth, innerHeight) => {
+                      return (
+                        <ErrorBoundaryAlert>
+                          <div className={styles.infoText}>
                             {
                               // @ts-ignore
-                              results.logs.length > 0 ? (
-                                <LogRows
-                                  // @ts-ignore
-                                  logRows={results.logs}
-                                  dedupStrategy={LogsDedupStrategy.none}
-                                  showLabels={true}
-                                  showTime={true}
-                                  wrapLogMessage={true}
-                                  timeZone={getTimeZone()}
-                                  enableLogDetails={true}
-                                  showContextToggle={() => {
-                                    return false;
-                                  }}
-                                />
-                              ) : (
-                                <EmptySearchResult>Could not find anything matching your query</EmptySearchResult>
-                              )
-                            }
-                          </ErrorBoundaryAlert>
-                        );
-                      }}
-                    </PanelChrome>
-                  );
-                }}
-              </AutoSizer>
-            </div>
-          ) : null}
-        </div>
-      </CustomScrollbar>
+                              results.logs.length
+                            }{' '}
+                            of 500 limit
+                          </div>
+                          {
+                            // @ts-ignore
+                            results.logs.length > 0 ? (
+                              <LogRows
+                                // @ts-ignore
+                                logRows={results.logs}
+                                dedupStrategy={LogsDedupStrategy.none}
+                                showLabels={true}
+                                showTime={true}
+                                wrapLogMessage={true}
+                                timeZone={getTimeZone()}
+                                enableLogDetails={true}
+                                showContextToggle={() => {
+                                  return false;
+                                }}
+                              />
+                            ) : (
+                              <EmptySearchResult>Could not find anything matching your query</EmptySearchResult>
+                            )
+                          }
+                        </ErrorBoundaryAlert>
+                      );
+                    }}
+                  </PanelChrome>
+                );
+              }}
+            </AutoSizer>
+          </div>
+        ) : null}
+      </div>
     </>
   );
 };
