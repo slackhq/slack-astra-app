@@ -66,10 +66,6 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
     `,
     logLines: css`
       margin-top: 21px;
-      height: 100%;
-      width: 100%;
-      flex: auto;
-      background-color: purple !important;
 
       /* For some reason after the upgrade to Grafana 9.x, the UI hardcoded that
       the content for the logs be strictly limited to whatever the height was. This
@@ -507,11 +503,9 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
           <div className={cx(styles.logLines)}>
             <AutoSizer disableHeight>
               {({ height, width }) => {
-                console.log("HERE");
                 return (
                   <PanelChrome height={height} width={width} title={`Logs `}>
                     {(innerWidth, innerHeight) => {
-                      console.log("Inner height: " + innerHeight);
                       return (
                         <ErrorBoundaryAlert>
                           <div className={styles.infoText}>
