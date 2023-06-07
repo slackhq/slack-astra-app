@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import { QueryEditorProps } from '@grafana/data';
 import { OpenSearchDatasource } from '../../datasource';
 import { OpenSearchOptions, OpenSearchQuery, QueryType } from '../../types';
