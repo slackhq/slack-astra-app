@@ -434,8 +434,16 @@ export class OpenSearchDatasource extends DataSourceApi<OpenSearchQuery, OpenSea
     return text;
   }
 
-  query(options: DataQueryRequest<OpenSearchQuery>): Observable<DataQueryResponse> {
-    const targets = this.interpolateVariablesInQueries(_.cloneDeep(options.targets), options.scopedVars);
+  queryWithPromise(request: DataQueryRequest<OpenSearchQuery>): Promise<DataQueryResponse> {
+    let response = this.query(request);
+    if (response instanceof Observable) {
+      return response.toPromise();
+    }
+    return response;
+  }
+
+  query(request: DataQueryRequest<OpenSearchQuery>): Promise<DataQueryResponse> | Observable<DataQueryResponse> {
+    const targets = this.interpolateVariablesInQueries(_.cloneDeep(request.targets), request.scopedVars);
 
     const luceneTargets: OpenSearchQuery[] = [];
     const pplTargets: OpenSearchQuery[] = [];
@@ -458,11 +466,11 @@ export class OpenSearchDatasource extends DataSourceApi<OpenSearchQuery, OpenSea
     const subQueries: Array<Observable<DataQueryResponse>> = [];
 
     if (luceneTargets.length) {
-      const luceneResponses = this.executeLuceneQueries(luceneTargets, options);
+      const luceneResponses = this.executeLuceneQueries(luceneTargets, request);
       subQueries.push(luceneResponses);
     }
     if (pplTargets.length) {
-      const pplResponses = this.executePPLQueries(pplTargets, options);
+      const pplResponses = this.executePPLQueries(pplTargets, request);
       subQueries.push(pplResponses);
     }
     if (subQueries.length === 0) {
