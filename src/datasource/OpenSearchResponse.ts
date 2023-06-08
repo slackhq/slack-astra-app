@@ -1,23 +1,23 @@
-import _ from 'lodash';
-import flatten from './dependencies/flatten';
-import * as queryDef from './query_def';
-import TableModel from './dependencies/table_model';
+import _ from "lodash";
+import flatten from "./dependencies/flatten";
+import * as queryDef from "./query_def";
+import TableModel from "./dependencies/table_model";
 import {
-  dateTime,
-  DataQueryResponse,
   DataFrame,
-  toDataFrame,
+  DataQueryResponse,
+  dateTime,
   FieldType,
   MutableDataFrame,
   PreferredVisualisationType,
-} from '@grafana/data';
-import { Aggregation, OpenSearchQuery, QueryType } from './types';
+  toDataFrame
+} from "@grafana/data";
+import { Aggregation, OpenSearchQuery, QueryType } from "./types";
 import {
   ExtendedStatMetaType,
-  isMetricAggregationWithField,
-} from './components/QueryEditor/MetricAggregationsEditor/aggregations';
-import { describeMetric } from './utils';
-import { metricAggregationConfig } from './components/QueryEditor/MetricAggregationsEditor/utils';
+  isMetricAggregationWithField
+} from "./components/QueryEditor/MetricAggregationsEditor/aggregations";
+import { describeMetric } from "./utils";
+import { metricAggregationConfig } from "./components/QueryEditor/MetricAggregationsEditor/utils";
 
 export class OpenSearchResponse {
   constructor(
@@ -466,7 +466,7 @@ export class OpenSearchResponse {
       }
 
       if (response.hits && response.hits.hits.length > 0) {
-        const { propNames, docs } = flattenHits(response.hits.hits);
+        const { propNames, docs } = flattenHits(response.hits.hits, this.targets[0].timeField!);
         if (docs.length > 0) {
           let series = createEmptyDataFrame(
             propNames,
@@ -666,16 +666,19 @@ type Doc = {
   _id: string;
   _type: string;
   _index: string;
+  _score?: any;
   _source?: any;
+  _timesinceepoch: number;
 };
 
 /**
  * Flatten the docs from response mainly the _source part which can be nested. This flattens it so that it is one level
  * deep and the keys are: `level1Name.level2Name...`. Also returns list of all properties from all the docs (not all
  * docs have to have the same keys).
- * @param hits
+ * @param hits - The hits from KalDB
+ * @param timeField - The time field set in the datasource so that we can extract it from the hits payload
  */
-const flattenHits = (hits: Doc[]): { docs: Array<Record<string, any>>; propNames: string[] } => {
+const flattenHits = (hits: Doc[], timeField: string): { docs: Array<Record<string, any>>; propNames: string[] } => {
   const docs: any[] = [];
   // We keep a list of all props so that we can create all the fields in the dataFrame, this can lead
   // to wide sparse dataframes in case the scheme is different per document.
@@ -683,13 +686,18 @@ const flattenHits = (hits: Doc[]): { docs: Array<Record<string, any>>; propNames
 
   for (const hit of hits) {
     const flattened = hit._source ? flatten(hit._source) : {};
-    const doc = {
+
+    let doc = {
       _id: hit._id,
       _type: hit._type,
       _index: hit._index,
+      _score: hit._score,
       _source: { ...flattened },
       ...flattened,
     };
+
+    // The hit.<timeField> field is in fractional seconds, but we expect it to be in milliseconds down the line
+    doc[timeField] = hit[timeField] * 1000;
 
     for (const propName of Object.keys(doc)) {
       if (propNames.indexOf(propName) === -1) {

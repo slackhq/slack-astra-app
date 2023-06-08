@@ -543,6 +543,7 @@ export class OpenSearchDatasource extends DataSourceApi<OpenSearchQuery, OpenSea
           map((res: any) => {
             const er = new OpenSearchResponse([target], res, QueryType.PPL);
 
+
             if (targets.some(target => target.isLogsQuery)) {
               const response = er.getLogs(this.logMessageField, this.logLevelField);
               for (const dataFrame of response.data) {
