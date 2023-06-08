@@ -1,7 +1,7 @@
-import _ from "lodash";
-import flatten from "./dependencies/flatten";
-import * as queryDef from "./query_def";
-import TableModel from "./dependencies/table_model";
+import _ from 'lodash';
+import flatten from './dependencies/flatten';
+import * as queryDef from './query_def';
+import TableModel from './dependencies/table_model';
 import {
   DataFrame,
   DataQueryResponse,
@@ -9,15 +9,15 @@ import {
   FieldType,
   MutableDataFrame,
   PreferredVisualisationType,
-  toDataFrame
-} from "@grafana/data";
-import { Aggregation, OpenSearchQuery, QueryType } from "./types";
+  toDataFrame,
+} from '@grafana/data';
+import { Aggregation, OpenSearchQuery, QueryType } from './types';
 import {
   ExtendedStatMetaType,
-  isMetricAggregationWithField
-} from "./components/QueryEditor/MetricAggregationsEditor/aggregations";
-import { describeMetric } from "./utils";
-import { metricAggregationConfig } from "./components/QueryEditor/MetricAggregationsEditor/utils";
+  isMetricAggregationWithField,
+} from './components/QueryEditor/MetricAggregationsEditor/aggregations';
+import { describeMetric } from './utils';
+import { metricAggregationConfig } from './components/QueryEditor/MetricAggregationsEditor/utils';
 
 export class OpenSearchResponse {
   constructor(
