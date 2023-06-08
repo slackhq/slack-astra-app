@@ -14,7 +14,6 @@ import { css } from '@emotion/css';
 import { PPLFormatEditor } from './PPLFormatEditor';
 
 export type OpenSearchQueryEditorProps = QueryEditorProps<OpenSearchDatasource, OpenSearchQuery, OpenSearchOptions>;
-
 export const QueryEditor = ({ query, onChange, datasource }: OpenSearchQueryEditorProps) => (
   <OpenSearchProvider datasource={datasource} onChange={onChange} query={query}>
     <QueryEditorForm value={query} />

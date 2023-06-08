@@ -157,7 +157,7 @@ describe('OpenSearchDatasource', function(this: any) {
         ],
       };
 
-      result = await ctx.ds.query(query).toPromise();
+      result = await ctx.ds.queryWithPromise(query);
 
       parts = requestOptions.data.split('\n');
       header = JSON.parse(parts[0]);
@@ -214,7 +214,7 @@ describe('OpenSearchDatasource', function(this: any) {
       } as DataQueryRequest<OpenSearchQuery>;
 
       const queryBuilderSpy = jest.spyOn(ctx.ds.queryBuilder, 'getLogsQuery');
-      const response = await ctx.ds.query(query).toPromise();
+      const response = await ctx.ds.queryWithPromise(query);
       return { queryBuilderSpy, response };
     }
 
@@ -674,7 +674,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should send the correct data source request', async () => {
         const { ds, options } = setup(targets);
-        await ds.query(options).toPromise();
+        await ds.queryWithPromise(options);
         expect(payloads.length).toBe(1);
         expect(payloads[0].url).toBe(`${OPENSEARCH_MOCK_URL}/_opendistro/_ppl`);
         expect(JSON.parse(payloads[0].data).query).toBe(defaultPPLQuery);
@@ -736,7 +736,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should send the correct data source request', async () => {
         const { ds, options } = setup(targets);
-        await ds.query(options).toPromise();
+        await ds.queryWithPromise(options);
         const expectedQuery = `${defaultPPLQuery} | where age > 21 | fields firstname, lastname`;
         expect(payloads.length).toBe(1);
         expect(payloads[0].url).toBe(`${OPENSEARCH_MOCK_URL}/_opendistro/_ppl`);
@@ -800,7 +800,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should send the correct data source request', async () => {
         const { ds, options } = setup(targets);
-        await ds.query(options).toPromise();
+        await ds.queryWithPromise(options);
         const expectedQuery = `${defaultPPLQuery} | fields clientip, response`;
         expect(payloads.length).toBe(1);
         expect(payloads[0].url).toBe(`${OPENSEARCH_MOCK_URL}/_opendistro/_ppl`);
@@ -862,7 +862,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should send the correct data source request', async () => {
         const { ds, options } = setup(targets);
-        await ds.query(options).toPromise();
+        await ds.queryWithPromise(options);
         const expectedQuery = `${defaultPPLQuery} | stats count(response) by timestamp`;
         expect(payloads.length).toBe(1);
         expect(payloads[0].url).toBe(`${OPENSEARCH_MOCK_URL}/_opendistro/_ppl`);
@@ -910,7 +910,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should send the correct data source requests', async () => {
         const { ds, options } = setup(targets);
-        await ds.query(options).toPromise();
+        await ds.queryWithPromise(options);
         const firstExpectedQuery = `${defaultPPLQuery} | fields firstname`;
         const secondExpectedQuery = `${defaultPPLQuery} | fields lastname`;
 
@@ -969,7 +969,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should send the correct data source requests', async () => {
         const { ds, options } = setup(targets);
-        await ds.query(options).toPromise();
+        await ds.queryWithPromise(options);
         expect(payloads.length).toBe(2);
         expect(payloads).toEqual(
           expect.arrayContaining([
@@ -1025,7 +1025,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should process it properly', async () => {
         const { ds, options } = setup(targets);
-        await expect(ds.query(options).toPromise()).rejects.toEqual(
+        await expect(ds.queryWithPromise(options)).rejects.toEqual(
           expect.objectContaining({
             message: 'Error occurred in Elasticsearch engine: no such index [unknown]',
           })
@@ -1056,7 +1056,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should properly throw an unknown error', async () => {
         const { ds, options } = setup(targets);
-        await expect(ds.query(options).toPromise()).rejects.toEqual(
+        await expect(ds.queryWithPromise(options)).rejects.toEqual(
           expect.objectContaining({
             message: 'Unknown OpenSearch error response',
           })

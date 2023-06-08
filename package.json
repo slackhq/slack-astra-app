@@ -50,17 +50,17 @@
   "dependencies": {
     "@emotion/css": "11.9.0",
     "@grafana/aws-sdk": "0.0.37",
-    "@grafana/data": "9.0.2",
-    "@grafana/e2e-selectors": "9.0.2",
-    "@grafana/runtime": "9.0.2",
-    "@grafana/toolkit": "9.0.2",
-    "@grafana/ui": "9.0.2",
+    "@grafana/data": "9.5.3",
+    "@grafana/e2e-selectors": "9.5.3",
+    "@grafana/runtime": "9.5.3",
+    "@grafana/toolkit": "9.5.3",
+    "@grafana/ui": "9.5.3",
     "lodash": "4.17.21",
     "react": "17.0.2",
     "react-dom": "17.0.2",
     "react-use": "17.4.0",
     "react-virtualized-auto-sizer": "1.0.2",
-    "rxjs": "7.5.5",
+    "rxjs": "7.8.0",
     "semver": "7.3.7"
   },
   "engines": {
