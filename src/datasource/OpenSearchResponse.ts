@@ -668,7 +668,6 @@ type Doc = {
   _index: string;
   _score?: any;
   _source?: any;
-  _timesinceepoch: number;
 };
 
 /**
