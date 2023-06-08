@@ -504,7 +504,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
             <AutoSizer disableHeight>
               {({ height, width }) => {
                 return (
-                  <PanelChrome height={height} width={width} title={`Logs `}>
+                  <PanelChrome height={height} width={width} title={`Logs`}>
                     {(innerWidth, innerHeight) => {
                       return (
                         <ErrorBoundaryAlert>
