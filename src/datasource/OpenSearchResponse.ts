@@ -3,13 +3,13 @@ import flatten from './dependencies/flatten';
 import * as queryDef from './query_def';
 import TableModel from './dependencies/table_model';
 import {
-  dateTime,
-  DataQueryResponse,
   DataFrame,
-  toDataFrame,
+  DataQueryResponse,
+  dateTime,
   FieldType,
   MutableDataFrame,
   PreferredVisualisationType,
+  toDataFrame,
 } from '@grafana/data';
 import { Aggregation, OpenSearchQuery, QueryType } from './types';
 import {
@@ -485,6 +485,10 @@ export class OpenSearchResponse {
               doc['level'] = doc[logLevelField];
             }
 
+            // The hit.<timeField> field is in fractional seconds, but we expect it to be in milliseconds later in rendering
+            // NOTE: This may change in the future to a different format
+            doc['_timesinceepoch'] = doc['_timesinceepoch'] * 1000;
+
             series.add(doc);
           }
           if (isLogsRequest) {
@@ -666,14 +670,16 @@ type Doc = {
   _id: string;
   _type: string;
   _index: string;
+  _score?: any;
   _source?: any;
+  _timesinceepoch: number;
 };
 
 /**
  * Flatten the docs from response mainly the _source part which can be nested. This flattens it so that it is one level
  * deep and the keys are: `level1Name.level2Name...`. Also returns list of all properties from all the docs (not all
  * docs have to have the same keys).
- * @param hits
+ * @param hits - The hits from KalDB
  */
 const flattenHits = (hits: Doc[]): { docs: Array<Record<string, any>>; propNames: string[] } => {
   const docs: any[] = [];
@@ -683,11 +689,14 @@ const flattenHits = (hits: Doc[]): { docs: Array<Record<string, any>>; propNames
 
   for (const hit of hits) {
     const flattened = hit._source ? flatten(hit._source) : {};
-    const doc = {
+
+    let doc = {
       _id: hit._id,
       _type: hit._type,
       _index: hit._index,
+      _score: hit._score,
       _source: { ...flattened },
+      _timesinceepoch: hit._timesinceepoch,
       ...flattened,
     };
 
