@@ -1,5 +1,18 @@
 # Changelog
 
+# 0.0.3
+### New features
+N/A
+
+### Breaking changes
+N/A
+
+### Bugs squashed
+* Fixed an issue where the KalDB log UI would fail to render in Grafana 9.X versions
+* Fixed an issue where we weren't properly mapping and parsing the dates returned by KalDB
+* Fixed an issue where we still allowed folks to select "PPL" as a query type, despite it not being (currently) 
+supported
+
 ## 0.0.2
 
 ### New features
