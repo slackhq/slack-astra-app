@@ -1130,8 +1130,8 @@ describe('OpenSearchDatasource', function(this: any) {
       } as DataSourceInstanceSettings<OpenSearchOptions>;
       const ds = new OpenSearchDatasource(instanceSettings);
       const supportedTypes = ds.getSupportedQueryTypes();
-      expect(supportedTypes.length).toBe(2);
-      expect(supportedTypes).toEqual(expect.arrayContaining([QueryType.Lucene, QueryType.PPL]));
+      expect(supportedTypes.length).toBe(1);
+      expect(supportedTypes).toEqual(expect.arrayContaining([QueryType.Lucene]));
     });
   });
 });
