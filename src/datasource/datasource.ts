@@ -88,7 +88,7 @@ export class OpenSearchDatasource extends DataSourceApi<OpenSearchQuery, OpenSea
     if (this.logLevelField === '') {
       this.logLevelField = undefined;
     }
-    this.pplEnabled = settingsData.pplEnabled ?? true;
+    this.pplEnabled = false;
   }
 
   private request(method: string, url: string, data?: undefined) {
