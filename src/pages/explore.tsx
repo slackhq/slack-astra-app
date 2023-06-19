@@ -6,7 +6,7 @@ import {
   InlineField,
   InlineFieldRow,
   LegendDisplayMode,
-  LogRows,
+  //LogRows,
   PageToolbar,
   PanelChrome,
   QueryField,
@@ -26,9 +26,8 @@ import {
   applyFieldOverrides,
   AppRootProps,
   dateTimeForTimeZone,
-  dateTimeParse,
+  dateTimeParse, Field,
   FieldColorModeId,
-  getDefaultTimeRange,
   getTimeZone,
   GrafanaTheme,
   KeyValue,
@@ -38,6 +37,9 @@ import {
   toDataFrame,
   toUtc,
 } from '@grafana/data';
+
+// @ts-ignore
+import { getFieldLinksForExplore } from 'app/features/explore/utils/links';
 
 import { DataSourcePicker, getDataSourceSrv, getLocationSrv, SystemJS } from '@grafana/runtime';
 import { css, cx } from '@emotion/css';
@@ -91,6 +93,9 @@ const getStyles = stylesFactory((theme: GrafanaTheme) => {
       font-size: ${theme.typography.size.sm};
       color: ${theme.colors.textWeak};
       margin-bottom: 20px;
+    `,
+    exploreContainer: css`
+      padding: 16px;
     `,
   };
 });
@@ -165,7 +170,10 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
             from: isNaN(query.from) ? query.from : dateTimeParse(parseInt(query.from, 10)),
             to: isNaN(query.to) ? query.to : dateTimeParse(parseInt(query.to, 10)),
           })
-        : getDefaultTimeRange(),
+        : rangeUtil.convertRawToRange({
+            from: 'now-15m',
+            to: 'now',
+          }),
   });
 
   const setSynchronizedState = (state: any) => {
@@ -299,6 +307,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
 
   const styles = getStyles(theme);
 
+  console.log('3');
   return (
     <>
       <PageToolbar
@@ -362,7 +371,7 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
           </ToolbarButton>
         </ButtonGroup>
       </PageToolbar>
-      <div className="explore-container">
+      <div className={cx('explore-container', styles.exploreContainer)}>
         <div className={cx('panel-container', styles.queryContainer)}>
           <InlineFieldRow>
             <InlineField label="Query" labelWidth={17} grow>
@@ -534,6 +543,9 @@ export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
                               showContextToggle={() => {
                                 return false;
                               }}
+                              getFieldLinks={
+
+                              }
                               prettifyLogMessage={true}
                             />
                           ) : (

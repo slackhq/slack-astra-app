@@ -1,7 +1,7 @@
 # KalDB Grafana App
 
 [![release version](https://img.shields.io/github/v/release/slackhq/slack-kaldb-app?include_prereleases)](https://github.com/slackhq/slack-kaldb-app/releases)
-[![release pipeline](https://img.shields.io/github/workflow/status/slackhq/slack-kaldb-app/Release?label=release)](https://github.com/slackhq/slack-kaldb-app/actions/workflows/release.yml)
+[![release pipeline](https://img.shields.io/github/actions/workflow/status/slackhq/slack-kaldb-app/release.yml?label=release)](https://github.com/slackhq/slack-kaldb-app/actions/workflows/release.yml)
 [![license](https://img.shields.io/github/license/slackhq/slack-kaldb-app)](https://github.com/slackhq/slack-kaldb-app/blob/master/LICENSE)
 
 This Grafana plugin adds support for [KalDB](https://github.com/slackhq/kaldb), and includes both a datasource and 

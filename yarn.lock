@@ -1614,6 +1614,15 @@
     tslib "2.5.0"
     typescript "4.8.4"
 
+"@grafana/e2e-selectors@canary":
+  version "10.1.0-121976pre"
+  resolved "https://registry.yarnpkg.com/@grafana/e2e-selectors/-/e2e-selectors-10.1.0-121976pre.tgz#22943e2fe9df4fc9cbd98773b7a8177f2c70a90b"
+  integrity sha512-4Gldxsod1h0xsN1FWkJMy1pGVcFsSavg9Q1C/niysh6F0VuTvDU5MEFrYYJncnVuvWoqE+mYBNQ5Qb3cACJRhw==
+  dependencies:
+    "@grafana/tsconfig" "^1.2.0-rc1"
+    tslib "2.5.0"
+    typescript "4.8.4"
+
 "@grafana/eslint-config@2.3.0":
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/@grafana/eslint-config/-/eslint-config-2.3.0.tgz#2d053d488854e2fcbaa1ebc0ed4c0258fc014aa4"
@@ -1643,6 +1652,14 @@
     eslint-plugin-react "7.31.10"
     eslint-plugin-react-hooks "4.6.0"
     typescript "4.8.4"
+
+"@grafana/experimental@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@grafana/experimental/-/experimental-1.0.1.tgz#c6bdba19a6b7547438263b7f3fecbc38e0fef774"
+  integrity sha512-TK8ADJ9h8zRMlKBIyB3up7hd1kLyKObYyEE61dM3VIezF39TGAXb5AIxjbtLH5J/VZzO2Y4ejnOHXwsvMECbhg==
+  dependencies:
+    "@types/uuid" "^8.3.3"
+    uuid "^8.3.2"
 
 "@grafana/faro-core@^1.0.2":
   version "1.0.5"
@@ -1677,6 +1694,18 @@
     rxjs "7.8.0"
     systemjs "0.20.19"
     tslib "2.5.0"
+
+"@grafana/scenes@0.17.0":
+  version "0.17.0"
+  resolved "https://registry.yarnpkg.com/@grafana/scenes/-/scenes-0.17.0.tgz#773e000ccd419caa1568c7f7f290dd662fab0292"
+  integrity sha512-Hd0bt098udInAO2SiH3xFKCIJcWlEEqKORFRZia0wrZmUqgfQWZ0TC/K0enTIE/Hnl9eWuy/jEZrpo5YuzUiQw==
+  dependencies:
+    "@grafana/e2e-selectors" canary
+    "@grafana/experimental" "1.0.1"
+    react-grid-layout "1.3.4"
+    react-use "17.4.0"
+    react-virtualized-auto-sizer "1.0.7"
+    uuid "^9.0.0"
 
 "@grafana/schema@9.5.3":
   version "9.5.3"
@@ -3300,6 +3329,11 @@
   integrity sha512-0yeUr92L3r0GLRnBOvtYK1v2SjqMIqQDHMl7GLb+l2L8+6LSFWEEWEIgVsPdMn5ImLM8qzWT8xFPtQYpp8co0g==
   dependencies:
     source-map "^0.6.1"
+
+"@types/uuid@^8.3.3":
+  version "8.3.4"
+  resolved "https://registry.yarnpkg.com/@types/uuid/-/uuid-8.3.4.tgz#bd86a43617df0594787d38b735f55c805becf1bc"
+  integrity sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==
 
 "@types/webpack-dev-server@3":
   version "3.11.6"
@@ -8172,7 +8206,7 @@ lodash.flattendeep@^4.4.0:
   resolved "https://registry.yarnpkg.com/lodash.flattendeep/-/lodash.flattendeep-4.4.0.tgz#fb030917f86a3134e5bc9bec0d69e0013ddfedb2"
   integrity sha512-uHaJFihxmJcEX3kT4I23ABqKKalJ/zDrDg0lsFtc1h+3uw49SIJ5beyhx5ExVRti3AvKoOJngIj7xz3oylPdWQ==
 
-lodash.isequal@^4.5.0:
+lodash.isequal@^4.0.0, lodash.isequal@^4.5.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/lodash.isequal/-/lodash.isequal-4.5.0.tgz#415c4478f2bcc30120c22ce10ed3226f7d3e18e0"
   integrity sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==
@@ -9915,6 +9949,14 @@ react-dom@17.0.2:
     object-assign "^4.1.1"
     scheduler "^0.20.2"
 
+react-draggable@^4.0.0, react-draggable@^4.0.3:
+  version "4.4.5"
+  resolved "https://registry.yarnpkg.com/react-draggable/-/react-draggable-4.4.5.tgz#9e37fe7ce1a4cf843030f521a0a4cc41886d7e7c"
+  integrity sha512-OMHzJdyJbYTZo4uQE393fHcqqPYsEtkjfMgvCHr6rejT+Ezn4OZbNyGH50vv+SunC1RMvwOTSWkEODQLzw1M9g==
+  dependencies:
+    clsx "^1.1.1"
+    prop-types "^15.8.1"
+
 react-dropzone@14.2.3:
   version "14.2.3"
   resolved "https://registry.yarnpkg.com/react-dropzone/-/react-dropzone-14.2.3.tgz#0acab68308fda2d54d1273a1e626264e13d4e84b"
@@ -9945,6 +9987,17 @@ react-from-dom@^0.6.2:
   version "0.6.2"
   resolved "https://registry.yarnpkg.com/react-from-dom/-/react-from-dom-0.6.2.tgz#9da903a508c91c013b55afcd59348b8b0a39bdb4"
   integrity sha512-qvWWTL/4xw4k/Dywd41RBpLQUSq97csuv15qrxN+izNeLYlD9wn5W8LspbfYe5CWbaSdkZ72BsaYBPQf2x4VbQ==
+
+react-grid-layout@1.3.4:
+  version "1.3.4"
+  resolved "https://registry.yarnpkg.com/react-grid-layout/-/react-grid-layout-1.3.4.tgz#4fa819be24a1ba9268aa11b82d63afc4762a32ff"
+  integrity sha512-sB3rNhorW77HUdOjB4JkelZTdJGQKuXLl3gNg+BI8gJkTScspL1myfZzW/EM0dLEn+1eH+xW+wNqk0oIM9o7cw==
+  dependencies:
+    clsx "^1.1.1"
+    lodash.isequal "^4.0.0"
+    prop-types "^15.8.1"
+    react-draggable "^4.0.0"
+    react-resizable "^3.0.4"
 
 react-highlight-words@0.20.0:
   version "0.20.0"
@@ -10031,6 +10084,14 @@ react-redux@^7.2.0:
     loose-envify "^1.4.0"
     prop-types "^15.7.2"
     react-is "^17.0.2"
+
+react-resizable@^3.0.4:
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/react-resizable/-/react-resizable-3.0.5.tgz#362721f2efbd094976f1780ae13f1ad7739786c1"
+  integrity sha512-vKpeHhI5OZvYn82kXOs1bC8aOXktGU5AmKAgaZS4F5JPburCtbmDPqE7Pzp+1kN4+Wb81LlF33VpGwWwtXem+w==
+  dependencies:
+    prop-types "15.x"
+    react-draggable "^4.0.3"
 
 react-router-dom@^5.2.0:
   version "5.3.3"
@@ -10145,6 +10206,11 @@ react-virtualized-auto-sizer@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/react-virtualized-auto-sizer/-/react-virtualized-auto-sizer-1.0.2.tgz#a61dd4f756458bbf63bd895a92379f9b70f803bd"
   integrity sha512-MYXhTY1BZpdJFjUovvYHVBmkq79szK/k7V3MO+36gJkWGkrXKtyr4vCPtpphaTLRAdDNoYEYFZWE8LjN+PIHNg==
+
+react-virtualized-auto-sizer@1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/react-virtualized-auto-sizer/-/react-virtualized-auto-sizer-1.0.7.tgz#bfb8414698ad1597912473de3e2e5f82180c1195"
+  integrity sha512-Mxi6lwOmjwIjC1X4gABXMJcKHsOo0xWl3E3ugOgufB8GJU+MqrtY35aBuvCYv/razQ1Vbp7h1gWJjGjoNN5pmA==
 
 react-window@1.8.8:
   version "1.8.8"
@@ -11583,7 +11649,7 @@ utila@~0.4:
   resolved "https://registry.yarnpkg.com/utila/-/utila-0.4.0.tgz#8a16a05d445657a3aea5eecc5b12a4fa5379772c"
   integrity sha512-Z0DbgELS9/L/75wZbro8xAnT50pBVFQZ+hUEueGDU5FN51YSCYM+jdxsfCiHjwNP/4LCDD0i/graKpeBnOXKRA==
 
-uuid@9.0.0:
+uuid@9.0.0, uuid@^9.0.0:
   version "9.0.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-9.0.0.tgz#592f550650024a38ceb0c562f2f6aa435761efb5"
   integrity sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==
