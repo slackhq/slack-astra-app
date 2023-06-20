@@ -1714,6 +1714,13 @@
   dependencies:
     tslib "2.5.0"
 
+"@grafana/schema@canary":
+  version "10.1.0-121976pre"
+  resolved "https://registry.yarnpkg.com/@grafana/schema/-/schema-10.1.0-121976pre.tgz#723c1a3cda51918286dedddd827acd02a2b050d2"
+  integrity sha512-Ek8JP1NUSi4rFuaNgA5Z8o1YZ+kZGZiYJmmi20FiEF12vX77xI+KEAEW1mRAHuXnKuPBpjWNwLGHO+nDrewiMA==
+  dependencies:
+    tslib "2.5.0"
+
 "@grafana/toolkit@9.5.3":
   version "9.5.3"
   resolved "https://registry.yarnpkg.com/@grafana/toolkit/-/toolkit-9.5.3.tgz#cd0f4b9721568b8aa853be422eb8dedcb7e3eed8"

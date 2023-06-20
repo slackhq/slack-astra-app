@@ -56,6 +56,7 @@
     "@grafana/toolkit": "9.5.3",
     "@grafana/ui": "9.5.3",
     "@grafana/scenes": "0.17.0",
+    "@grafana/schema": "canary",
     "lodash": "4.17.21",
     "react": "17.0.2",
     "react-dom": "17.0.2",
