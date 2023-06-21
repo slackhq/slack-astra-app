@@ -27,5 +27,5 @@ ci/
 e2e-results/
 
 /.idea
-/.DS_Store
 /slack-kaldb-app.zip
+.DS_Store

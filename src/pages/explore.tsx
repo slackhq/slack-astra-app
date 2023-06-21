@@ -1,554 +1,526 @@
-import {
-  ButtonGroup,
-  DrawStyle,
-  EmptySearchResult,
-  ErrorBoundaryAlert,
-  InlineField,
-  InlineFieldRow,
-  LegendDisplayMode,
-  LogRows,
-  PageToolbar,
-  PanelChrome,
-  QueryField,
-  stylesFactory,
-  TimeRangePicker,
-  TimeSeries,
-  ToolbarButton,
-  TooltipPlugin,
-  useTheme,
-  ZoomPlugin,
-} from '@grafana/ui';
-import React, { Dispatch, FC, SetStateAction, useEffect, useState } from 'react';
-import AutoSizer from 'react-virtualized-auto-sizer';
+import React, { useMemo } from 'react';
 
 import {
-  AppEvents,
-  applyFieldOverrides,
-  AppRootProps,
-  dateTimeForTimeZone,
-  dateTimeParse,
-  FieldColorModeId,
-  getDefaultTimeRange,
-  getTimeZone,
-  GrafanaTheme,
-  KeyValue,
-  LogsDedupStrategy,
-  rangeUtil,
-  TimeRange,
-  toDataFrame,
-  toUtc,
-} from '@grafana/data';
+  CustomTransformOperator,
+  DataSourceVariable,
+  EmbeddedScene,
+  PanelBuilders,
+  SceneApp,
+  SceneAppPage,
+  SceneComponentProps,
+  SceneDataTransformer,
+  SceneFlexItem,
+  SceneFlexLayout,
+  SceneObjectBase,
+  SceneObjectState,
+  SceneObjectStateChangedEvent,
+  SceneQueryRunner,
+  SceneReactObject,
+  SceneTimePicker,
+  SceneTimeRange,
+  SceneVariableSet,
+  TextBoxVariable,
+  VariableValueSelectors,
+  VizPanel,
+} from '@grafana/scenes';
+import { AppRootProps, ArrayVector, DataFrame } from '@grafana/data';
+import { DrawStyle, InlineField, Input, Button, InlineLabel, IconButton } from '@grafana/ui';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { VariableHide } from '@grafana/schema';
 
-import { DataSourcePicker, getDataSourceSrv, getLocationSrv, SystemJS } from '@grafana/runtime';
-import { css, cx } from '@emotion/css';
+/**
+ * The main explore component for KalDB, using the new Grafana scenes implementation.
+ *
+ * @see {@link https://grafana.github.io/scenes/ | Grafana scenes documentation}
+ * @see {@link https://developers.grafana.com/ui/latest/index.html?path=/story/docs-overview-intro--page | Grafana UI documentation}
+ */
 
-const copyStringToClipboard = (string: string) => {
-  const el = document.createElement('textarea');
-  el.value = string;
-  document.body.appendChild(el);
-  el.select();
-  document.execCommand('copy');
-  document.body.removeChild(el);
-
-  SystemJS.load('app/core/app_events').then((appEvents: any) => {
-    appEvents.emit(AppEvents.alertSuccess, ['Link copied']);
-  });
-};
-
-const getStyles = stylesFactory((theme: GrafanaTheme) => {
-  return {
-    pageToolbar: css`
-      padding-top: 8px;
-      padding-bottom: 8px;
-    `,
-    timeseriesChart: css`
-      margin-top: 21px;
-    `,
-    logLines: css`
-      margin-top: 21px;
-
-      /* For some reason after the upgrade to Grafana 9.x, the UI hardcoded that
-      the content for the logs be strictly limited to whatever the height was. This
-      would be fine if the height of the panel was dynamic, but it's fixed. Which means
-      we can only set a fixed height for our log viewing (which isn't great), or we can
-      do what I did here, which is to find the CSS class that ends in "-panel-content"
-      (which this does, link: https://github.com/grafana/grafana/blob/2656c06e0bbc38df5a4a373246dae94d2a7b7cfc/packages/grafana-ui/src/components/PanelChrome/PanelChrome.tsx#L295)
-      and unset the "contain" property. This is a bit hacky, but while we're relying on
-      the ChromePanel to do what we want, it'll just have to be that way.
-      */
-      div[class$='-panel-content'] {
-        contain: unset !important;
-      }
-    `,
-    queryContainer: css`
-      label: queryContainer;
-      // Need to override normal css class and don't want to count on ordering of the classes in html.
-      height: auto !important;
-      flex: unset !important;
-      padding: ${theme.panelPadding}px;
-    `,
-    infoText: css`
-      font-size: ${theme.typography.size.sm};
-      color: ${theme.colors.textWeak};
-      margin-bottom: 20px;
-    `,
-  };
+const dataSourceVariable = new DataSourceVariable({
+  name: 'datasource',
+  pluginId: 'slack-kaldb-app-backend-datasource',
+  hide: VariableHide.hideVariable,
 });
 
-const hasInitialQueryParams = (query: KeyValue<any>) => {
-  const params = Object.keys(query);
-  return (
-    params.includes('queryString') && params.includes('dataSource') && params.includes('to') && params.includes('from')
-  );
-};
+const queryStringVariable = new TextBoxVariable({
+  name: 'query',
+  value: '',
+  hide: VariableHide.hideVariable,
+});
 
-const getZoomedTimeRange = (range: TimeRange, factor: number): TimeRange => {
-  const timespan = range.to.valueOf() - range.from.valueOf();
-  const center = range.to.valueOf() - timespan / 2;
+// todo - node stats should be moved to another file and imported
+interface NodeStatsState extends SceneObjectState {
+  total: number;
+  failed: number;
+}
 
-  const to = center + (timespan * factor) / 2;
-  const from = center - (timespan * factor) / 2;
-
-  return rangeUtil.convertRawToRange({ from: dateTimeParse(from), to: dateTimeParse(to) });
-};
-
-const formatLogLine = (source: any) => {
-  const startHighlight = '\u001b[1m';
-  const endHighlight = '\u001b[0m';
-
-  let response = '';
-  for (let key of Object.keys(source)) {
-    response += `${startHighlight}${key}:${endHighlight} ${source[key]} `;
-  }
-
-  return response.substr(0, response.length - 1);
-};
-
-const getShiftedTimeRange = (direction: number, origRange: TimeRange): TimeRange => {
-  const range = {
-    from: toUtc(origRange.from),
-    to: toUtc(origRange.to),
-  };
-
-  const timespan = (range.to.valueOf() - range.from.valueOf()) / 2;
-  let to: number, from: number;
-
-  if (direction === -1) {
-    to = range.to.valueOf() - timespan;
-    from = range.from.valueOf() - timespan;
-  } else if (direction === 1) {
-    to = range.to.valueOf() + timespan;
-    from = range.from.valueOf() + timespan;
-    if (to > Date.now() && range.to.valueOf() < Date.now()) {
-      to = Date.now();
-      from = range.from.valueOf();
-    }
-  } else {
-    to = range.to.valueOf();
-    from = range.from.valueOf();
-  }
-
-  return rangeUtil.convertRawToRange({ from: dateTimeParse(from), to: dateTimeParse(to) });
-};
-
-export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
-  const [intState, setIntState] = useState({
-    queryString: query.queryString ? query.queryString : '',
-    dataSource: query.dataSource
-      ? query.dataSource
-      : getDataSourceSrv().getList({
-          type: ['slack-kaldb-app-backend-datasource'],
-        })[0].name,
-    timeRange:
-      query.from && query.to
-        ? rangeUtil.convertRawToRange({
-            from: isNaN(query.from) ? query.from : dateTimeParse(parseInt(query.from, 10)),
-            to: isNaN(query.to) ? query.to : dateTimeParse(parseInt(query.to, 10)),
-          })
-        : getDefaultTimeRange(),
-  });
-
-  const setSynchronizedState = (state: any) => {
-    // merge input state with existing state, overwriting where necessary
-    setIntState(Object.assign(intState, state));
-    syncStateToUrl();
-  };
-
-  const syncStateToUrl = () => {
-    getLocationSrv().update({
-      partial: true,
-      replace: true,
-      query: {
-        queryString: intState.queryString,
-        dataSource: intState.dataSource,
-        from: intState.timeRange.raw.from.valueOf(),
-        to: intState.timeRange.raw.to.valueOf(),
-      },
-    });
-  };
-
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState({
-    metrics: null,
-    logs: null,
-    metadata: null,
-  });
-
-  const theme = useTheme();
-  if (!hasInitialQueryParams(query)) {
-    syncStateToUrl();
-  }
-
-  const loadData = (callback: Dispatch<SetStateAction<any>>) => {
-    getDataSourceSrv()
-      .get(intState.dataSource)
-      .then(function(datasourceApi) {
-        const interval = rangeUtil.calculateInterval(intState.timeRange, 30).interval;
-        datasourceApi
-          .query({
-            range: intState.timeRange,
-            scopedVars: {
-              __interval: { text: interval, value: interval },
-            },
-            targets: [
-              {
-                // @ts-ignore
-                query: query.queryString,
-                bucketAggs: [
-                  {
-                    type: 'date_histogram',
-                    id: '1',
-                    settings: { interval: interval },
-                  },
-                ],
-              },
-              {
-                // @ts-ignore
-                format: 'logs',
-                isLogsQuery: true,
-                metrics: [
-                  {
-                    type: 'logs',
-                  },
-                ],
-                query: query.queryString,
-                bucketAggs: null,
-              },
-            ],
-          })
-          // @ts-ignore
-          .toPromise()
-          .then(function(response) {
-            const metricsResponse = response.data[0];
-            const dataQueryResponseData = response.data[1];
-
-            const metadata = {
-              metrics: {
-                shards: metricsResponse.meta.shards,
-              },
-              logs: {
-                shards: dataQueryResponseData.meta.shards,
-              },
-            };
-
-            // parse metrics
-            const series = toDataFrame(metricsResponse);
-
-            // parse logs
-            let tmpLogRows = [];
-            if (dataQueryResponseData && typeof dataQueryResponseData.get === 'function') {
-              for (let i = 0; i < dataQueryResponseData.length; i++) {
-                tmpLogRows.push({
-                  // uid: Date.now(),
-                  entryFieldIndex: 0,
-                  rowIndex: i,
-                  dataFrame: dataQueryResponseData,
-                  labels: [],
-                  entry: JSON.stringify(dataQueryResponseData.get(i)._source),
-                  // @ts-ignore
-                  timeEpochMs: new Date(dataQueryResponseData.get(i)[datasourceApi.timeField]).valueOf(),
-                  hasAnsi: true,
-                  // @ts-ignore
-                  logLevel: datasourceApi.logLevelField,
-                  raw: formatLogLine(dataQueryResponseData.get(i)._source),
-                });
-              }
-            }
-
-            callback({
-              metrics: series,
-              logs: tmpLogRows,
-              metadata: metadata,
-            });
-          });
-      });
-  };
-
-  const load = () => {
-    setLoading(true);
-    loadData(data => {
-      setResults(data);
-      setLoading(false);
-    });
-  };
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [intState.timeRange, intState.dataSource]);
-
-  const styles = getStyles(theme);
-
+const NodeStatsRenderer = ({ model }: SceneComponentProps<NodeStats>) => {
+  const { total, failed } = model.useState();
   return (
     <>
-      <PageToolbar
-        pageIcon="compass"
-        parent={'KalDB'}
-        title={'Explore'}
-        className={cx(styles.pageToolbar)}
-        //@ts-ignore
-        onClickParent={() => {}}
-        leftItems={[
-          <DataSourcePicker
-            key={'datasourcepicker'}
-            type={['slack-kaldb-app-backend-datasource']}
-            current={intState.dataSource}
-            onChange={dataSource => {
-              setSynchronizedState({
-                dataSource: dataSource.name,
-              });
-            }}
-          />,
-        ]}
-      >
-        <ToolbarButton icon="share-alt" onClick={() => copyStringToClipboard(window.location.href)} />
-        <TimeRangePicker
-          value={intState.timeRange}
-          // isSynced={true}
-          onChange={event => {
-            setSynchronizedState({
-              timeRange: event,
-            });
-          }}
-          onChangeTimeZone={event => {
-            //console.log(event);
-          }}
-          onMoveBackward={() => {
-            setSynchronizedState({
-              timeRange: getShiftedTimeRange(-1, intState.timeRange),
-            });
-          }}
-          onMoveForward={() => {
-            setSynchronizedState({
-              timeRange: getShiftedTimeRange(1, intState.timeRange),
-            });
-          }}
-          onZoom={() => {
-            setSynchronizedState({
-              timeRange: getZoomedTimeRange(intState.timeRange, 2),
-            });
-          }}
-        />
-        <ButtonGroup>
-          <ToolbarButton
-            variant="primary"
-            icon="sync"
-            disabled={loading}
-            onClick={event => {
-              load();
-            }}
-          >
-            Run query
-          </ToolbarButton>
-        </ButtonGroup>
-      </PageToolbar>
-      <div className="explore-container">
-        <div className={cx('panel-container', styles.queryContainer)}>
-          <InlineFieldRow>
-            <InlineField label="Query" labelWidth={17} grow>
-              <>
-                <QueryField
-                  query={intState.queryString}
-                  onBlur={() => {}}
-                  onChange={query => {
-                    setSynchronizedState({
-                      queryString: query,
-                    });
-                  }}
-                  placeholder="Lucene Query"
-                  portalOrigin="elasticsearch"
-                />
-              </>
-            </InlineField>
-          </InlineFieldRow>
-        </div>
-
-        {!loading && results.metrics != null ? (
-          <div className={cx(styles.timeseriesChart)}>
-            <AutoSizer disableHeight>
-              {({ width }) => {
-                const series = results.metrics;
-
-                // @ts-ignore
-                series.fields[1].config.custom = {
-                  drawStyle: DrawStyle.Bars,
-                  fillOpacity: 100,
-                  pointSize: 5,
-                  lineWidth: 0,
-                };
-                // @ts-ignore
-                series.fields[1].config.color = { mode: FieldColorModeId.PaletteClassic };
-                // @ts-ignore
-                series.fields[1].config.unit = 'short';
-
-                const metricsResults = applyFieldOverrides({
-                  // @ts-ignore
-                  data: [series],
-                  fieldConfig: {
-                    overrides: [],
-                    defaults: {},
-                  },
-                  // @ts-ignore
-                  theme,
-                  replaceVariables: (value: string) => value,
-                });
-
-                let totalHits = 0;
-
-                // @ts-ignore
-                const valueField = series.fields.find((field: any) => field.name === 'Value');
-                if (valueField !== undefined) {
-                  totalHits = valueField.state.calcs.sum;
-                }
-
-                return (
-                  <PanelChrome height={350} width={width} title={'Graph'}>
-                    {(innerWidth, innerHeight) => {
-                      return (
-                        <ErrorBoundaryAlert>
-                          <div className={styles.infoText}>
-                            <span>{totalHits.toLocaleString()} hits</span>
-                            <span style={{ float: 'right' }}>
-                              {results.metadata.metrics.shards.total} shards, {results.metadata.metrics.shards.failed}{' '}
-                              failed
-                            </span>
-                          </div>
-
-                          <TimeSeries
-                            height={innerHeight - 50}
-                            width={innerWidth}
-                            frames={metricsResults}
-                            legend={{
-                              displayMode: LegendDisplayMode.List,
-                              placement: 'bottom',
-                              calcs: [],
-                              showLegend: true,
-                            }}
-                            timeRange={intState.timeRange}
-                            timeZone={getTimeZone()}
-                          >
-                            {(config, alignedDataFrame) => {
-                              config.addHook('draw', u => {
-                                let { top, height } = u.bbox;
-
-                                // @ts-ignore
-                                if (results.logs && results.logs.length === 500) {
-                                  const maxTime = intState.timeRange.to.valueOf();
-
-                                  const minLogTime = Math.min.apply(
-                                    Math,
-                                    // @ts-ignore
-                                    results.logs.map((logLine: { timeEpochMs: any }) => logLine.timeEpochMs)
-                                  );
-
-                                  const calcLeft = u.valToPos(minLogTime, 'x', true);
-                                  const calcWidth = u.valToPos(maxTime, 'x', true) - calcLeft;
-
-                                  u.ctx.save();
-                                  u.ctx.fillStyle = 'rgb(100, 100, 100, 0.2)';
-                                  u.ctx.globalCompositeOperation = 'destination-over';
-                                  u.ctx.fillRect(calcLeft, top, calcWidth, height);
-                                  u.ctx.restore();
-                                }
-                              });
-
-                              return (
-                                <>
-                                  <ZoomPlugin
-                                    config={config}
-                                    onZoom={range => {
-                                      setSynchronizedState({
-                                        timeRange: rangeUtil.convertRawToRange({
-                                          from: dateTimeForTimeZone(getTimeZone(), range.from),
-                                          to: dateTimeForTimeZone(getTimeZone(), range.to),
-                                        }),
-                                      });
-                                    }}
-                                  />
-                                  <TooltipPlugin config={config} data={alignedDataFrame} timeZone={getTimeZone()} />
-                                </>
-                              );
-                            }}
-                          </TimeSeries>
-                        </ErrorBoundaryAlert>
-                      );
-                    }}
-                  </PanelChrome>
-                );
-              }}
-            </AutoSizer>
-          </div>
-        ) : null}
-        {!loading && results.logs != null ? (
-          <div className={cx(styles.logLines)}>
-            <AutoSizer disableHeight>
-              {({ height, width }) => {
-                return (
-                  <PanelChrome height={height} width={width} title={`Logs`}>
-                    {(innerWidth, innerHeight) => {
-                      return (
-                        <ErrorBoundaryAlert>
-                          <div className={styles.infoText}>
-                            <span>
-                              {
-                                // @ts-ignore
-                                results.logs.length
-                              }{' '}
-                              of 500 limit
-                            </span>
-                            <span style={{ float: 'right' }}>
-                              {results.metadata.logs.shards.total} shards, {results.metadata.logs.shards.failed} failed
-                            </span>
-                          </div>
-                          {// @ts-ignore
-                          results.logs.length > 0 ? (
-                            <LogRows
-                              // @ts-ignore
-                              logRows={results.logs}
-                              dedupStrategy={LogsDedupStrategy.none}
-                              showLabels={true}
-                              showTime={true}
-                              wrapLogMessage={true}
-                              timeZone={getTimeZone()}
-                              enableLogDetails={true}
-                              showContextToggle={() => {
-                                return false;
-                              }}
-                              prettifyLogMessage={true}
-                            />
-                          ) : (
-                            <EmptySearchResult>Could not find anything matching your query</EmptySearchResult>
-                          )}
-                        </ErrorBoundaryAlert>
-                      );
-                    }}
-                  </PanelChrome>
-                );
-              }}
-            </AutoSizer>
-          </div>
-        ) : null}
-      </div>
+      {total > -1 && failed > -1 ? (
+        <IconButton name={'bug'} tooltip={`${total} nodes queried, ${failed} failed`}></IconButton>
+      ) : null}
     </>
   );
 };
+
+class NodeStats extends SceneObjectBase<NodeStatsState> {
+  static Component = NodeStatsRenderer;
+  constructor(state?: Partial<NodeStatsState>) {
+    super({
+      total: -1,
+      failed: -1,
+      ...state,
+    });
+  }
+  setCount = (total: number, failed: number) => {
+    this.setState({
+      total: total,
+      failed: failed,
+    });
+  };
+}
+
+// todo - results stats should be moved to another file and imported
+interface ResultsStatsState extends SceneObjectState {
+  results: number;
+}
+
+const ResultsStatsRenderer = ({ model }: SceneComponentProps<ResultStats>) => {
+  const { results } = model.useState();
+
+  return <>{results > -1 ? <h5>{results.toLocaleString('en-US')} hits</h5> : <h5></h5>}</>;
+};
+
+class ResultStats extends SceneObjectBase<ResultsStatsState> {
+  static Component = ResultsStatsRenderer;
+  constructor(state?: Partial<ResultsStatsState>) {
+    super({
+      results: -1,
+      ...state,
+    });
+  }
+  setResults = (results: number) => {
+    this.setState({
+      results: results,
+    });
+  };
+
+  getCount() {
+    return this.state.results;
+  }
+}
+
+interface KaldbQueryState extends SceneObjectState {
+  query: string;
+  timeseriesLoading: boolean;
+  logsLoading: boolean;
+}
+
+const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
+  const { timeseriesLoading, logsLoading } = model.useState();
+
+  return (
+    <>
+      <InlineField label="Query" grow={true}>
+        <Input
+          defaultValue={queryStringVariable.getValue().toString()}
+          placeholder="Lucene Query"
+          onKeyDown={e => (e.key === 'Enter' ? model.doQuery() : null)}
+          onChange={e => model.onTextChange(e.currentTarget.value)}
+        />
+      </InlineField>
+      {timeseriesLoading || logsLoading ? (
+        <Button
+          icon="fa fa-spinner"
+          onClick={() => {
+            logsQueryRunner.cancelQuery();
+            histogramQueryRunner.cancelQuery();
+          }}
+          variant="destructive"
+        >
+          Cancel
+        </Button>
+      ) : (
+        <Button icon="sync" onClick={model.doQuery}>
+          Run Query
+        </Button>
+      )}
+    </>
+  );
+};
+
+class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
+  static Component = KaldbQueryRenderer;
+
+  constructor(state?: Partial<KaldbQueryState>) {
+    super({
+      query: '',
+      timeseriesLoading: false,
+      logsLoading: false,
+      ...state,
+    });
+  }
+
+  doQuery = () => {
+    queryStringVariable.setValue(this.state.query);
+  };
+
+  onTextChange = (query: string) => {
+    if (query.length === 0) {
+      this.setState({
+        query: '',
+      });
+    } else {
+      this.setState({
+        query: query,
+      });
+    }
+  };
+
+  setLogsLoading = (loading: boolean) => {
+    this.setState({
+      logsLoading: loading,
+    });
+  };
+
+  setTimeseriesLoading = (loading: boolean) => {
+    this.setState({
+      timeseriesLoading: loading,
+    });
+  };
+}
+
+const histogramNodeStats = new NodeStats();
+const logsNodeStats = new NodeStats();
+const resultsCounter = new ResultStats();
+const queryComponent = new KaldbQuery();
+
+const getExploreScene = () => {
+  return new EmbeddedScene({
+    $variables: new SceneVariableSet({
+      variables: [dataSourceVariable, queryStringVariable],
+    }),
+    body: new SceneFlexLayout({
+      direction: 'column',
+      children: [
+        new SceneFlexLayout({
+          height: 35,
+          direction: 'row',
+          children: [
+            new SceneFlexLayout({
+              children: [
+                new SceneFlexItem({
+                  width: '100%',
+                  body: queryComponent,
+                }),
+                new SceneFlexItem({
+                  // todo - zoom out is currently broken, and is a known issue
+                  // https://github.com/grafana/scenes/issues/67
+                  body: new SceneTimePicker({ isOnCanvas: true }),
+                }),
+              ],
+            }),
+          ],
+        }),
+        new SceneFlexLayout({
+          width: '100%',
+          children: [
+            new SceneFlexItem({
+              width: '20%',
+              maxWidth: 300,
+              body: new SceneFlexLayout({
+                direction: 'column',
+                children: [
+                  new SceneFlexLayout({
+                    height: 35,
+                    direction: 'row',
+                    children: [
+                      new SceneFlexItem({
+                        width: 'auto',
+                        body: new SceneReactObject({
+                          reactNode: <InlineLabel width="auto">Data source</InlineLabel>,
+                        }),
+                      }),
+                      new SceneFlexLayout({
+                        direction: 'column',
+                        children: [
+                          new SceneFlexItem({
+                            body: dataSourceVariable,
+                          }),
+                        ],
+                      }),
+                    ],
+                  }),
+                  new SceneFlexItem({
+                    height: '100%',
+                    body: new VizPanel({
+                      // todo - placeholder pending terms component
+                      title: '',
+                      pluginId: 'text',
+                      options: {
+                        content: '',
+                      },
+                    }),
+                  }),
+                ],
+              }),
+            }),
+            new SceneFlexItem({
+              width: '100%',
+              body: new SceneFlexLayout({
+                direction: 'column',
+                children: [
+                  new SceneFlexItem({
+                    body: resultsCounter,
+                  }),
+                  new SceneFlexItem({
+                    height: 300,
+                    body: histogramPanel.build(),
+                  }),
+                  new SceneFlexItem({
+                    height: '100%',
+                    minHeight: 300,
+                    body: logsPanel.build(),
+                  }),
+                ],
+              }),
+            }),
+          ],
+        }),
+      ],
+    }),
+    controls: [new VariableValueSelectors({})],
+  });
+};
+
+const logsPanel = PanelBuilders.logs()
+  .setOption('showTime', true)
+  .setOption('wrapLogMessage', true)
+  .setHoverHeader(true)
+  .setHeaderActions(
+    new SceneFlexLayout({
+      children: [logsNodeStats],
+    })
+  )
+  .setTitle('Logs');
+
+const logsQueryRunner = new SceneQueryRunner({
+  datasource: {
+    uid: '${datasource}',
+  },
+  queries: [
+    {
+      refId: 'A',
+      query: '${query:raw}',
+      queryType: 'lucene',
+      metrics: [
+        {
+          id: '1',
+          type: 'logs',
+        },
+      ],
+      bucketAggs: [],
+      // todo - this should use the config value for timestamp
+      timeField: '_timesinceepoch',
+    },
+  ],
+});
+
+logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
+  if (typeof event.payload.newState !== 'undefined') {
+    if (event.payload.newState['data'].state === 'Done') {
+      queryComponent.setLogsLoading(false);
+    } else if (event.payload.newState['data'].state === 'Loading') {
+      queryComponent.setLogsLoading(true);
+    } else if (event.payload.newState['data'].state === 'Error') {
+      queryComponent.setLogsLoading(false);
+      logsNodeStats.setCount(-1, -1);
+    }
+  }
+});
+
+/**
+ * This custom transform operation is used to rewrite the _source field to an ansi log line, as
+ * well as initialize the meta information used for debugging purposes.
+ */
+const logsResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
+  return source.pipe(
+    map((data: DataFrame[]) => {
+      if (data.length > 0 && data[0].meta['shards']) {
+        logsNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
+      }
+      return data.map((frame: DataFrame) => {
+        return {
+          ...frame,
+          fields: frame.fields.map(field => {
+            // todo - this should use the config value "message field name"
+            if (field.name === '_source') {
+              return {
+                ...field,
+                values: new ArrayVector(
+                  field.values.toArray().map(v => {
+                    let str = '';
+                    for (const [key, value] of Object.entries(v)) {
+                      // we specifically choose style code "2" here (dim) because it is the only style
+                      // that has custom logic specific to Grafana to allow it to look good in dark and light themes
+                      // https://github.com/grafana/grafana/blob/701c6b6f074d4bc515f0824ed4de1997db035b69/public/app/features/logs/components/LogMessageAnsi.tsx#L19-L24
+                      str = str + key + ': ' + '\u001b[2m' + value + '\u001b[0m' + ' ';
+                    }
+                    return str;
+                  })
+                ),
+              };
+            }
+            return {
+              ...field,
+              keys: ['Line'],
+            };
+          }),
+        };
+      });
+    })
+  );
+};
+
+logsPanel.setData(
+  new SceneDataTransformer({
+    $data: logsQueryRunner,
+    transformations: [
+      logsResultTransformation,
+      {
+        id: 'organize',
+        options: {
+          excludeByName: {},
+          indexByName: {
+            // todo - this should use the config value for timestamp
+            _timesinceepoch: 0,
+            // todo - this should use the config value "message field name"
+            _source: 1,
+          },
+          renameByName: {},
+        },
+      },
+    ],
+  })
+);
+
+const histogramQueryRunner = new SceneQueryRunner({
+  datasource: {
+    uid: '${datasource}',
+  },
+  queries: [
+    {
+      refId: 'A',
+      query: '${query:raw}',
+      queryType: 'lucene',
+      metrics: [
+        {
+          id: '1',
+          type: 'count',
+        },
+      ],
+      bucketAggs: [
+        {
+          type: 'date_histogram',
+          id: '2',
+          settings: {
+            interval: 'auto',
+          },
+          // todo - this should use the config value for timestamp
+          field: '_timesinceepoch',
+        },
+      ],
+      // todo - this should use the config value for timestamp
+      timeField: '_timesinceepoch',
+    },
+  ],
+  maxDataPoints: 30,
+});
+
+histogramQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
+  if (typeof event.payload.newState !== 'undefined') {
+    if (event.payload.newState['data'].state === 'Done') {
+      queryComponent.setTimeseriesLoading(false);
+    } else if (event.payload.newState['data'].state === 'Loading') {
+      resultsCounter.setResults(-1);
+      queryComponent.setTimeseriesLoading(true);
+    } else if (event.payload.newState['data'].state === 'Error') {
+      queryComponent.setTimeseriesLoading(false);
+      resultsCounter.setResults(-1);
+      histogramNodeStats.setCount(-1, -1);
+    }
+  }
+});
+
+const histogramPanel = PanelBuilders.timeseries()
+  .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
+  .setCustomFieldConfig('fillOpacity', 100)
+  .setOption('legend', { showLegend: false })
+  .setHoverHeader(true)
+  .setHeaderActions(
+    new SceneFlexLayout({
+      children: [histogramNodeStats],
+    })
+  )
+  .setTitle('Histogram');
+
+/**
+ * This custom transform operation is used to calculate the total results, as well as initialize the
+ * meta information used for debugging purposes
+ */
+const histogramResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
+  return source.pipe(
+    map((data: DataFrame[]) => {
+      if (data.length > 0 && data[0].meta['shards']) {
+        var counter = 0;
+        for (let i = data[0].fields[1].values['buffer'].length - 1; i >= 0; i--) {
+          counter += data[0].fields[1].values['buffer'][i];
+        }
+        resultsCounter.setResults(counter);
+        histogramNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
+      }
+      return data;
+    })
+  );
+};
+
+histogramPanel.setData(
+  new SceneDataTransformer({
+    $data: histogramQueryRunner,
+    transformations: [histogramResultTransformation],
+  })
+);
+
+const explorePage = new SceneAppPage({
+  title: 'Explore',
+  $timeRange: new SceneTimeRange({
+    from: 'now-15m',
+    to: 'now',
+  }),
+  url: '/a/slack-kaldb-app',
+  getScene: getExploreScene,
+});
+
+const getSceneApp = () =>
+  new SceneApp({
+    pages: [explorePage],
+  });
+
+const ExploreComponent = () => {
+  const scene = useMemo(() => getSceneApp(), []);
+  return <scene.Component model={scene} />;
+};
+
+export const PluginPropsContext = React.createContext<AppRootProps | null>(null);
+
+export class Explore extends React.PureComponent<AppRootProps> {
+  render() {
+    return (
+      <PluginPropsContext.Provider value={this.props}>
+        <ExploreComponent />
+      </PluginPropsContext.Provider>
+    );
+  }
+}
