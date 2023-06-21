@@ -8,8 +8,8 @@ This Grafana plugin adds support for [KalDB](https://github.com/slackhq/kaldb), 
 simplified explore interface.
 
 To get started [install](https://grafana.com/docs/grafana/latest/plugins/installation/) this app, then enable it from 
-the Grafana plugins page under "KalDB by Slack". Once installed a new datasource type will be available, and the KalDB
-explore icon will appear on the left side of the Grafana UI.
+the Grafana plugins page under "KalDB by Slack". Once installed a new datasource type will be available, and KalDB will
+appear in the navigation under Apps.
 
 ![KalDB explore](src/img/kaldb_explore.png)
 

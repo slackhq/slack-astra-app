@@ -44,7 +44,7 @@ const dataSourceVariable = new DataSourceVariable({
 
 const queryStringVariable = new TextBoxVariable({
   name: 'query',
-  value: '*:*',
+  value: '',
   hide: VariableHide.hideVariable,
 });
 
@@ -125,9 +125,10 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
     <>
       <InlineField label="Query" grow={true}>
         <Input
+          defaultValue={queryStringVariable.getValue().toString()}
           placeholder="Lucene Query"
           onKeyDown={e => (e.key === 'Enter' ? model.doQuery() : null)}
-          onBlur={e => model.onTextChange(e.currentTarget.value)}
+          onChange={e => model.onTextChange(e.currentTarget.value)}
         />
       </InlineField>
       {timeseriesLoading || logsLoading ? (
@@ -352,6 +353,7 @@ const logsResultTransformation: CustomTransformOperator = () => (source: Observa
         return {
           ...frame,
           fields: frame.fields.map(field => {
+            // todo - this should use the config value "message field name"
             if (field.name === '_source') {
               return {
                 ...field,
@@ -391,6 +393,7 @@ logsPanel.setData(
           excludeByName: {},
           indexByName: {
             _timesinceepoch: 0,
+            // todo - this should use the config value "message field name"
             _source: 1,
           },
           renameByName: {},
