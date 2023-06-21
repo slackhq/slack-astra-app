@@ -12,7 +12,7 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   SceneObjectBase,
-  SceneObjectState,
+  SceneObjectState, SceneObjectStateChangedEvent,
   SceneQueryRunner, SceneReactObject,
   SceneTimePicker,
   SceneTimeRange,
@@ -42,9 +42,6 @@ const timerange = new SceneTimeRange({
 
 const dataSourceVariable = new DataSourceVariable({
   name: 'Datasource',
-  options: [],
-  value: '',
-  text: '',
   pluginId: 'slack-kaldb-app-backend-datasource',
   hide: VariableHide.hideVariable,
 });
@@ -136,19 +133,35 @@ class ResultStats extends SceneObjectBase<ResultsStatsState> {
 
 interface KaldbQueryState extends SceneObjectState {
   query: string,
+  timeseriesLoading: boolean,
+  logsLoading: boolean
 }
 
 const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
-  // const { query } = model.useState();
+  const { timeseriesLoading, logsLoading } = model.useState();
 
   return (
     <>
-      <InlineField label="Query" grow={true}>
-        <Input placeholder="*:*" onKeyDown={(e) => e.key === 'Enter' ? model.doQuery(): null} onBlur={(e) => model.onTextChange(e.currentTarget.value)}/>
+      <InlineField label="Lucene Query" grow={true}>
+        <Input placeholder="*:*"
+               onKeyDown={(e) => e.key === 'Enter' ? model.doQuery(): null}
+               onBlur={(e) => model.onTextChange(e.currentTarget.value)}
+        />
       </InlineField>
-      <Button icon='sync' onClick={model.doQuery}>
-        Run Query
-      </Button>
+
+
+      {
+        timeseriesLoading || logsLoading ?
+        <Button icon='fa fa-spinner' onClick={() => {
+          data.cancelQuery();
+          dataTs.cancelQuery();
+        }} variant='destructive'>
+          Cancel
+        </Button> :
+          <Button icon='sync' onClick={model.doQuery}>
+            Run Query
+          </Button>
+      }
     </>
   );
 };
@@ -159,6 +172,8 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
   constructor(state?: Partial<KaldbQueryState>) {
     super({
       query: '*:*',
+      timeseriesLoading: false,
+      logsLoading: false,
       ...state,
     });
   }
@@ -179,12 +194,26 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
       });
     }
   };
+
+  setLogsLoading = (loading: boolean) => {
+    this.setState({
+      logsLoading: loading,
+    });
+  };
+
+  setTimeseriesLoading = (loading: boolean) => {
+    this.setState({
+      timeseriesLoading: loading
+    });
+  };
 }
 
 const histoCounter = new NodeStats();
 const logsCounter = new NodeStats();
 const resultsCounter = new ResultStats();
 const query = new KaldbQuery();
+
+const timepicker = new SceneTimePicker({ isOnCanvas: true });
 
 const getLogs = () => {
   //const terms = myTerms.build();
@@ -208,7 +237,7 @@ const getLogs = () => {
                   body: query,
                 }),
                 new SceneFlexItem({
-                  body: new SceneTimePicker({ isOnCanvas: true }),
+                  body: timepicker,
                 }),
               ]
             }),
@@ -352,13 +381,16 @@ const myLogs = PanelBuilders.logs()
     ]
     })
   )
+
   .setTitle('Logs');
 
 const data = new SceneQueryRunner({
   datasource: {
-    type: 'slack-kaldb-app-backend-datasource',
-    uid: 'c1235829-3d57-4743-a436-a945321a07e4',
+    // type: 'slack-kaldb-app-backend-datasource',
+    // uid: () => {},
+    uid: '${Datasource}',
   },
+    // [dataSourceVariable],
   queries: [
     {
       refId: 'A',
@@ -378,6 +410,21 @@ const data = new SceneQueryRunner({
   $timeRange: timerange,
 });
 
+data.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
+  //console.log('logs', event);
+    if (typeof event.payload.newState !== 'undefined') {
+      if (event.payload.newState['data'].state === 'Done') {
+        query.setLogsLoading(false);
+        // console.log('done');
+        // loading = false;
+      } else if (event.payload.newState['data'].state === 'Loading') {
+        query.setLogsLoading(true);
+      } else if (event.payload.newState['data'].state === 'Error') {
+        logsCounter.setCount(-1, -1);
+      }
+    }
+});
+
 interface ExploreFieldLinkModel extends LinkModel<Field> {
   variables?: VariableInterpolation[];
 }
@@ -388,14 +435,14 @@ const prefixHandlerTransformation: CustomTransformOperator = () => (source: Obse
   return source.pipe(
     map((data: DataFrame[]) => {
       if (data.length > 0 && data[0].meta['shards']) {
-        console.log(data[0]);
+        //console.log(data[0]);
         logsCounter.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
       }
       return data.map((frame: DataFrame) => {
         return {
           ...frame,
           fields: frame.fields.map((field) => {
-            console.log(field);
+            // console.log(field);
 
             //new Field
             if (field.name === '_source') {
@@ -484,8 +531,9 @@ myLogs.setData(transformedData);
 
 const dataTs = new SceneQueryRunner({
   datasource: {
-    type: 'slack-kaldb-app-backend-datasource',
-    uid: 'c1235829-3d57-4743-a436-a945321a07e4',
+    // type: 'slack-kaldb-app-backend-datasource',
+    // uid: () => {},
+    uid: '${Datasource}',
   },
   queries: [
     {
@@ -519,6 +567,23 @@ const dataTs = new SceneQueryRunner({
   ],
   $timeRange: timerange,
   maxDataPoints: 30,
+});
+
+dataTs.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
+  console.log('timeseries', event);
+  if (typeof event.payload.newState !== 'undefined') {
+    if (event.payload.newState['data'].state === 'Done') {
+      query.setTimeseriesLoading(false);
+      // console.log('done');
+      // loading = false;
+    } else if (event.payload.newState['data'].state === 'Loading') {
+      resultsCounter.setResults(-1);
+      query.setTimeseriesLoading(true);
+    } else if (event.payload.newState['data'].state === 'Error') {
+      resultsCounter.setResults(-1);
+      histoCounter.setCount(-1, -1);
+    }
+  }
 });
 
 const myHistogram = PanelBuilders.timeseries()
@@ -574,6 +639,7 @@ const transformedDataHisto = new SceneDataTransformer({
 myHistogram.setData(transformedDataHisto);
 
 const myPanel = myLogs.build();
+
 const hist = myHistogram.build();
 
 
