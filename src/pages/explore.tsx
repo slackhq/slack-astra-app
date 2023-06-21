@@ -156,7 +156,7 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
 
   constructor(state?: Partial<KaldbQueryState>) {
     super({
-      query: '*:*',
+      query: '',
       timeseriesLoading: false,
       logsLoading: false,
       ...state,
@@ -170,7 +170,7 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
   onTextChange = (query: string) => {
     if (query.length === 0) {
       this.setState({
-        query: '*:*',
+        query: '',
       });
     } else {
       this.setState({
@@ -322,6 +322,7 @@ const logsQueryRunner = new SceneQueryRunner({
         },
       ],
       bucketAggs: [],
+      // todo - this should use the config value for timestamp
       timeField: '_timesinceepoch',
     },
   ],
@@ -334,6 +335,7 @@ logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
     } else if (event.payload.newState['data'].state === 'Loading') {
       queryComponent.setLogsLoading(true);
     } else if (event.payload.newState['data'].state === 'Error') {
+      queryComponent.setLogsLoading(false);
       logsNodeStats.setCount(-1, -1);
     }
   }
@@ -392,6 +394,7 @@ logsPanel.setData(
         options: {
           excludeByName: {},
           indexByName: {
+            // todo - this should use the config value for timestamp
             _timesinceepoch: 0,
             // todo - this should use the config value "message field name"
             _source: 1,
@@ -425,9 +428,11 @@ const histogramQueryRunner = new SceneQueryRunner({
           settings: {
             interval: 'auto',
           },
+          // todo - this should use the config value for timestamp
           field: '_timesinceepoch',
         },
       ],
+      // todo - this should use the config value for timestamp
       timeField: '_timesinceepoch',
     },
   ],
@@ -442,6 +447,7 @@ histogramQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
       resultsCounter.setResults(-1);
       queryComponent.setTimeseriesLoading(true);
     } else if (event.payload.newState['data'].state === 'Error') {
+      queryComponent.setTimeseriesLoading(false);
       resultsCounter.setResults(-1);
       histogramNodeStats.setCount(-1, -1);
     }
