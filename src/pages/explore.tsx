@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo } from 'react';
 
 import {
   CustomTransformOperator,
@@ -12,52 +12,43 @@ import {
   SceneFlexItem,
   SceneFlexLayout,
   SceneObjectBase,
-  SceneObjectState, SceneObjectStateChangedEvent,
-  SceneQueryRunner, SceneReactObject,
+  SceneObjectState,
+  SceneObjectStateChangedEvent,
+  SceneQueryRunner,
+  SceneReactObject,
   SceneTimePicker,
   SceneTimeRange,
   SceneVariableSet,
   TextBoxVariable,
   VariableValueSelectors,
-  VizPanel
-} from "@grafana/scenes";
-import {
-  AppRootProps,
-  ArrayVector,
-  DataFrame,
-  Field,
-  FieldType,
-  LinkModel
-} from "@grafana/data";
-import { DrawStyle, InlineField, Input, Button, InlineLabel, IconButton } from "@grafana/ui";
-import { Observable } from "rxjs";
-import { map } from "rxjs/operators";
-import { VariableHide } from "@grafana/schema";
-import { VariableInterpolation } from "@grafana/runtime";
+  VizPanel,
+} from '@grafana/scenes';
+import { AppRootProps, ArrayVector, DataFrame } from '@grafana/data';
+import { DrawStyle, InlineField, Input, Button, InlineLabel, IconButton } from '@grafana/ui';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { VariableHide } from '@grafana/schema';
 
-const timerange = new SceneTimeRange({
-  from: 'now-15m',
-  to: 'now',
-});
+/**
+ * The main explore component for KalDB, using the new Grafana scenes implementation.
+ *
+ * @see {@link https://grafana.github.io/scenes/ | Grafana scenes documentation}
+ * @see {@link https://developers.grafana.com/ui/latest/index.html?path=/story/docs-overview-intro--page | Grafana UI documentation}
+ */
 
 const dataSourceVariable = new DataSourceVariable({
-  name: 'Datasource',
+  name: 'datasource',
   pluginId: 'slack-kaldb-app-backend-datasource',
   hide: VariableHide.hideVariable,
 });
 
-const queryString = new TextBoxVariable({
-  name: 'Query',
+const queryStringVariable = new TextBoxVariable({
+  name: 'query',
   value: '*:*',
   hide: VariableHide.hideVariable,
 });
 
-const controls = new VariableValueSelectors({});
-
-interface ResultsStatsState extends SceneObjectState {
-  results: number;
-}
-
+// todo - node stats should be moved to another file and imported
 interface NodeStatsState extends SceneObjectState {
   total: number;
   failed: number;
@@ -65,35 +56,14 @@ interface NodeStatsState extends SceneObjectState {
 
 const NodeStatsRenderer = ({ model }: SceneComponentProps<NodeStats>) => {
   const { total, failed } = model.useState();
-
   return (
     <>
-      {
-        (total > -1 && failed > -1) ?
-          <IconButton name={"bug"} tooltip={`${total} nodes queried, ${failed} failed`}>
-          </IconButton>
-      : null}
+      {total > -1 && failed > -1 ? (
+        <IconButton name={'bug'} tooltip={`${total} nodes queried, ${failed} failed`}></IconButton>
+      ) : null}
     </>
   );
 };
-
-const ResultsStatsRenderer = ({ model }: SceneComponentProps<ResultStats>) => {
-  const { results } = model.useState();
-
-  return (
-    <>
-      {
-        results > -1 ?
-            <h5>{results.toLocaleString("en-US")} hits</h5>
-          : <h5></h5>
-      }
-    </>
-  );
-};
-
-// const CounterRenderer = (props: SceneComponentProps<Counter>) => {
-//   return <div>Counter</div>;
-// };
 
 class NodeStats extends SceneObjectBase<NodeStatsState> {
   static Component = NodeStatsRenderer;
@@ -111,6 +81,17 @@ class NodeStats extends SceneObjectBase<NodeStatsState> {
     });
   };
 }
+
+// todo - results stats should be moved to another file and imported
+interface ResultsStatsState extends SceneObjectState {
+  results: number;
+}
+
+const ResultsStatsRenderer = ({ model }: SceneComponentProps<ResultStats>) => {
+  const { results } = model.useState();
+
+  return <>{results > -1 ? <h5>{results.toLocaleString('en-US')} hits</h5> : <h5></h5>}</>;
+};
 
 class ResultStats extends SceneObjectBase<ResultsStatsState> {
   static Component = ResultsStatsRenderer;
@@ -132,9 +113,9 @@ class ResultStats extends SceneObjectBase<ResultsStatsState> {
 }
 
 interface KaldbQueryState extends SceneObjectState {
-  query: string,
-  timeseriesLoading: boolean,
-  logsLoading: boolean
+  query: string;
+  timeseriesLoading: boolean;
+  logsLoading: boolean;
 }
 
 const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
@@ -142,26 +123,29 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
 
   return (
     <>
-      <InlineField label="Lucene Query" grow={true}>
-        <Input placeholder="*:*"
-               onKeyDown={(e) => e.key === 'Enter' ? model.doQuery(): null}
-               onBlur={(e) => model.onTextChange(e.currentTarget.value)}
+      <InlineField label="Query" grow={true}>
+        <Input
+          placeholder="Lucene Query"
+          onKeyDown={e => (e.key === 'Enter' ? model.doQuery() : null)}
+          onBlur={e => model.onTextChange(e.currentTarget.value)}
         />
       </InlineField>
-
-
-      {
-        timeseriesLoading || logsLoading ?
-        <Button icon='fa fa-spinner' onClick={() => {
-          data.cancelQuery();
-          dataTs.cancelQuery();
-        }} variant='destructive'>
+      {timeseriesLoading || logsLoading ? (
+        <Button
+          icon="fa fa-spinner"
+          onClick={() => {
+            logsQueryRunner.cancelQuery();
+            histogramQueryRunner.cancelQuery();
+          }}
+          variant="destructive"
+        >
           Cancel
-        </Button> :
-          <Button icon='sync' onClick={model.doQuery}>
-            Run Query
-          </Button>
-      }
+        </Button>
+      ) : (
+        <Button icon="sync" onClick={model.doQuery}>
+          Run Query
+        </Button>
+      )}
     </>
   );
 };
@@ -179,12 +163,11 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
   }
 
   doQuery = () => {
-    queryString.setValue(this.state.query);
-    // console.log('query string: ' + this.state.query);
+    queryStringVariable.setValue(this.state.query);
   };
 
   onTextChange = (query: string) => {
-    if (query.length == 0) {
+    if (query.length === 0) {
       this.setState({
         query: '*:*',
       });
@@ -203,23 +186,20 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
 
   setTimeseriesLoading = (loading: boolean) => {
     this.setState({
-      timeseriesLoading: loading
+      timeseriesLoading: loading,
     });
   };
 }
 
-const histoCounter = new NodeStats();
-const logsCounter = new NodeStats();
+const histogramNodeStats = new NodeStats();
+const logsNodeStats = new NodeStats();
 const resultsCounter = new ResultStats();
-const query = new KaldbQuery();
+const queryComponent = new KaldbQuery();
 
-const timepicker = new SceneTimePicker({ isOnCanvas: true });
-
-const getLogs = () => {
-  //const terms = myTerms.build();
+const getExploreScene = () => {
   return new EmbeddedScene({
     $variables: new SceneVariableSet({
-      variables: [dataSourceVariable, queryString],
+      variables: [dataSourceVariable, queryStringVariable],
     }),
     body: new SceneFlexLayout({
       direction: 'column',
@@ -229,28 +209,19 @@ const getLogs = () => {
           direction: 'row',
           children: [
             new SceneFlexLayout({
-              // width: '80%',
-              // ySizing: 'fill',
               children: [
                 new SceneFlexItem({
                   width: '100%',
-                  body: query,
+                  body: queryComponent,
                 }),
                 new SceneFlexItem({
-                  body: timepicker,
+                  // todo - zoom out is currently broken, and is a known issue
+                  // https://github.com/grafana/scenes/issues/67
+                  body: new SceneTimePicker({ isOnCanvas: true }),
                 }),
-              ]
+              ],
             }),
-            // new SceneFlexLayout({
-            //   // width: '20%',
-            //   ySizing: 'content',
-            //   children: [
-            //     new SceneFlexItem({
-            //       body: new SceneTimePicker({ isOnCanvas: true }),
-            //     }),
-            //   ]
-            // })
-          ]
+          ],
         }),
         new SceneFlexLayout({
           width: '100%',
@@ -258,143 +229,90 @@ const getLogs = () => {
             new SceneFlexItem({
               width: '20%',
               maxWidth: 300,
-              //height: 600,
               body: new SceneFlexLayout({
                 direction: 'column',
                 children: [
                   new SceneFlexLayout({
                     height: 35,
                     direction: 'row',
-                    // width: '100%',
                     children: [
                       new SceneFlexItem({
-                        // ySizing: 'content',
-                        //wrap: ''
-                        // width: '20%',
                         width: 'auto',
                         body: new SceneReactObject({
-                          reactNode:
-                            <InlineLabel width="auto">
-                              Datasource
-                            </InlineLabel>
-                          ,
-                        })
+                          reactNode: <InlineLabel width="auto">Data source</InlineLabel>,
+                        }),
                       }),
                       new SceneFlexLayout({
                         direction: 'column',
                         children: [
                           new SceneFlexItem({
-                            // ySizing: 'content',
-                            // width: '80%',
-                            body: dataSourceVariable
-                          })
-                        ]
-                      })
-                    ]
-                    //}),
-                    // dataSourceVariable,
-                    // height: 20
+                            body: dataSourceVariable,
+                          }),
+                        ],
+                      }),
+                    ],
                   }),
                   new SceneFlexItem({
                     height: '100%',
                     body: new VizPanel({
-                      // displayMode: 'transparent',
+                      // todo - placeholder pending terms component
                       title: '',
                       pluginId: 'text',
                       options: {
                         content: '',
                       },
-                    })
-                  })
-                ]
+                    }),
+                  }),
+                ],
               }),
             }),
             new SceneFlexItem({
               width: '100%',
-              // height: 600,
-              //body: myPanel,
               body: new SceneFlexLayout({
                 direction: 'column',
                 children: [
                   new SceneFlexItem({
-                    body: resultsCounter
-                    // resultsCounter,
-
+                    body: resultsCounter,
                   }),
-                  // new VizPanel({
-                  //   displayMode: 'transparent',
-                  //   title: '',
-                  //   pluginId: 'text',
-                  //   options: {
-                  //     content: '',
-                  //   },
-                  // })
-
-                  // new SceneFlexItem({
-                  //   height: 20,
-                  //   body: histoCounter,
-                  // }),
-                  // new SceneFlexItem({
-                  //   height: 20,
-                  //   body: resultsCounter,
-                  // }),
-
                   new SceneFlexItem({
                     height: 300,
-                    body: hist,
+                    body: histogramPanel.build(),
                   }),
                   new SceneFlexItem({
                     height: '100%',
                     minHeight: 300,
-                    // height: 300,
-                    body: myPanel,
+                    body: logsPanel.build(),
                   }),
-                  // new SceneFlexItem({
-                  //   body: logsCounter,
-                  // }),
-                  ]
-              })
+                ],
+              }),
             }),
-
           ],
         }),
-        // new SceneFlexItem({
-        //   width: '20%',
-        //   height: 600,
-        //   body: terms,
-        // }),
       ],
     }),
-    controls: [controls],
+    controls: [new VariableValueSelectors({})],
   });
 };
 
-const myLogs = PanelBuilders.logs()
+const logsPanel = PanelBuilders.logs()
   .setOption('showTime', true)
   .setOption('wrapLogMessage', true)
-  // .setDisplayMode('transparent')
   .setHoverHeader(true)
   .setHeaderActions(
     new SceneFlexLayout({
-    children: [
-      logsCounter,
-    ]
+      children: [logsNodeStats],
     })
   )
-
   .setTitle('Logs');
 
-const data = new SceneQueryRunner({
+const logsQueryRunner = new SceneQueryRunner({
   datasource: {
-    // type: 'slack-kaldb-app-backend-datasource',
-    // uid: () => {},
-    uid: '${Datasource}',
+    uid: '${datasource}',
   },
-    // [dataSourceVariable],
   queries: [
     {
       refId: 'A',
-      query: '${Query:raw}',
+      query: '${query:raw}',
       queryType: 'lucene',
       metrics: [
         {
@@ -403,153 +321,99 @@ const data = new SceneQueryRunner({
         },
       ],
       bucketAggs: [],
-      // format: 'table',
       timeField: '_timesinceepoch',
     },
   ],
-  $timeRange: timerange,
 });
 
-data.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
-  //console.log('logs', event);
-    if (typeof event.payload.newState !== 'undefined') {
-      if (event.payload.newState['data'].state === 'Done') {
-        query.setLogsLoading(false);
-        // console.log('done');
-        // loading = false;
-      } else if (event.payload.newState['data'].state === 'Loading') {
-        query.setLogsLoading(true);
-      } else if (event.payload.newState['data'].state === 'Error') {
-        logsCounter.setCount(-1, -1);
-      }
+logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
+  if (typeof event.payload.newState !== 'undefined') {
+    if (event.payload.newState['data'].state === 'Done') {
+      queryComponent.setLogsLoading(false);
+    } else if (event.payload.newState['data'].state === 'Loading') {
+      queryComponent.setLogsLoading(true);
+    } else if (event.payload.newState['data'].state === 'Error') {
+      logsNodeStats.setCount(-1, -1);
     }
+  }
 });
 
-interface ExploreFieldLinkModel extends LinkModel<Field> {
-  variables?: VariableInterpolation[];
-}
-
-// @ts-ignore
-const prefixHandlerTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
-  // console.log(source);
+/**
+ * This custom transform operation is used to rewrite the _source field to an ansi log line, as
+ * well as initialize the meta information used for debugging purposes.
+ */
+const logsResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
   return source.pipe(
     map((data: DataFrame[]) => {
       if (data.length > 0 && data[0].meta['shards']) {
-        //console.log(data[0]);
-        logsCounter.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
+        logsNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
       }
       return data.map((frame: DataFrame) => {
         return {
           ...frame,
-          fields: frame.fields.map((field) => {
-            // console.log(field);
-
-            //new Field
+          fields: frame.fields.map(field => {
             if (field.name === '_source') {
               return {
                 ...field,
-                values: new ArrayVector(field.values.toArray().map((v) => {
+                values: new ArrayVector(
+                  field.values.toArray().map(v => {
                     let str = '';
-                  for (const [key, value] of Object.entries(v)) {
-                    str = str + key + ': ' + '\u001b[2m' + value + '\u001b[0m' + ' ';
-                  }
+                    for (const [key, value] of Object.entries(v)) {
+                      // we specifically choose style code "2" here (dim) because it is the only style
+                      // that has custom logic specific to Grafana to allow it to look good in dark and light themes
+                      // https://github.com/grafana/grafana/blob/701c6b6f074d4bc515f0824ed4de1997db035b69/public/app/features/logs/components/LogMessageAnsi.tsx#L19-L24
+                      str = str + key + ': ' + '\u001b[2m' + value + '\u001b[0m' + ' ';
+                    }
                     return str;
-                }))
+                  })
+                ),
               };
             }
-
-            const variableLink: ExploreFieldLinkModel = {
-              href: 'test',
-              onClick: () => {},
-              origin: {
-                config: { links: [] },
-                name: 'Line',
-                type: FieldType.string,
-                values: new ArrayVector(['a', 'b']),
-              },
-              title: 'test',
-              target: '_self',
-              variables: [
-                { variableName: 'path', value: 'test', match: '${path}', found: true },
-                { variableName: 'msg', value: 'test msg', match: '${msg}', found: true },
-              ],
-            };
-
-            // const variableLink: ExploreFieldLinkModel = {
-            //   href: 'test',
-            //   onClick: () => {},
-            //   origin: {
-            //     config: { links: [] },
-            //     name: 'Line',
-            //     type: FieldType.string,
-            //     values: ['a', 'b'],
-            //   },
-            //   title: 'test',
-            //   target: '_self',
-            //   variables: [
-            //     { variableName: 'path', value: 'test', match: '${path}', found: true },
-            //     { variableName: 'msg', value: 'test msg', match: '${msg}', found: true },
-            //   ],
-            // };
-
-
             return {
               ...field,
               keys: ['Line'],
-              fieldIndex: 2,
-              links: [variableLink],
             };
-
-            // return field;
           }),
         };
       });
-      //return data;
     })
   );
 };
 
-const transformedData = new SceneDataTransformer({
-  $data: data,
-  transformations: [
-    prefixHandlerTransformation,
-    {
-      id: 'organize',
-      options: {
-        excludeByName: {},
-        indexByName: {
-          _timesinceepoch: 0,
-          _source: 1,
+logsPanel.setData(
+  new SceneDataTransformer({
+    $data: logsQueryRunner,
+    transformations: [
+      logsResultTransformation,
+      {
+        id: 'organize',
+        options: {
+          excludeByName: {},
+          indexByName: {
+            _timesinceepoch: 0,
+            _source: 1,
+          },
+          renameByName: {},
         },
-        renameByName: {},
       },
-    },
-  ],
-});
+    ],
+  })
+);
 
-myLogs.setData(transformedData);
-
-const dataTs = new SceneQueryRunner({
+const histogramQueryRunner = new SceneQueryRunner({
   datasource: {
-    // type: 'slack-kaldb-app-backend-datasource',
-    // uid: () => {},
-    uid: '${Datasource}',
+    uid: '${datasource}',
   },
   queries: [
     {
       refId: 'A',
-      query: '${Query:raw}',
+      query: '${query:raw}',
       queryType: 'lucene',
       metrics: [
         {
           id: '1',
           type: 'count',
         },
-        // {
-        //   id: '2',
-        //   type: 'cumulative_sum',
-        //   field: '1'
-        // },
       ],
       bucketAggs: [
         {
@@ -561,136 +425,93 @@ const dataTs = new SceneQueryRunner({
           field: '_timesinceepoch',
         },
       ],
-      // format: 'table',
       timeField: '_timesinceepoch',
     },
   ],
-  $timeRange: timerange,
   maxDataPoints: 30,
 });
 
-dataTs.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
-  console.log('timeseries', event);
+histogramQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
   if (typeof event.payload.newState !== 'undefined') {
     if (event.payload.newState['data'].state === 'Done') {
-      query.setTimeseriesLoading(false);
-      // console.log('done');
-      // loading = false;
+      queryComponent.setTimeseriesLoading(false);
     } else if (event.payload.newState['data'].state === 'Loading') {
       resultsCounter.setResults(-1);
-      query.setTimeseriesLoading(true);
+      queryComponent.setTimeseriesLoading(true);
     } else if (event.payload.newState['data'].state === 'Error') {
       resultsCounter.setResults(-1);
-      histoCounter.setCount(-1, -1);
+      histogramNodeStats.setCount(-1, -1);
     }
   }
 });
 
-const myHistogram = PanelBuilders.timeseries()
+const histogramPanel = PanelBuilders.timeseries()
   .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
   .setCustomFieldConfig('fillOpacity', 100)
-  .setOption('legend', {showLegend: false})
+  .setOption('legend', { showLegend: false })
   .setHoverHeader(true)
   .setHeaderActions(
     new SceneFlexLayout({
-      children: [
-        // new SceneControlsSpacer(),
-        histoCounter,
-      ]
+      children: [histogramNodeStats],
     })
   )
-  // .set
-  // .setOption('showTime', true)
-  // .setOption('wrapLogMessage', true)
-  //.setDescription('totalNodes:' + totalNodes + ' | failedNodes: ' + failedNodes)
-  //.setHeaderActions()
-  //.setHoverHeader(false)
-  // .setDisplayMode('transparent')
   .setTitle('Histogram');
 
-
-const prefixHandlerTransformationHisto: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
-  // console.log(source);
+/**
+ * This custom transform operation is used to calculate the total results, as well as initialize the
+ * meta information used for debugging purposes
+ */
+const histogramResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
   return source.pipe(
     map((data: DataFrame[]) => {
       if (data.length > 0 && data[0].meta['shards']) {
-        //console.log(data[0], data[0].fields[1].values['buffer']);
-
         var counter = 0;
         for (let i = data[0].fields[1].values['buffer'].length - 1; i >= 0; i--) {
           counter += data[0].fields[1].values['buffer'][i];
         }
         resultsCounter.setResults(counter);
-        histoCounter.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
+        histogramNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
       }
       return data;
     })
   );
 };
 
+histogramPanel.setData(
+  new SceneDataTransformer({
+    $data: histogramQueryRunner,
+    transformations: [histogramResultTransformation],
+  })
+);
 
-const transformedDataHisto = new SceneDataTransformer({
-  $data: dataTs,
-  transformations: [
-    prefixHandlerTransformationHisto,
-  ],
-});
-
-myHistogram.setData(transformedDataHisto);
-
-const myPanel = myLogs.build();
-
-const hist = myHistogram.build();
-
-
-const myAppPage = new SceneAppPage({
+const explorePage = new SceneAppPage({
   title: 'Explore',
-  // renderTitle: (title: string) => <></>,
-  //subTitle: 'foo',
-  // titleImg: '',
-
-  titleIcon: 'compass',
-  $timeRange: timerange,
-  controls: [
-    // new SceneControlsSpacer(),
-    // new SceneTimePicker({ isOnCanvas: true }),
-    // new SceneRefreshPicker({ isOnCanvas: true }),
-  ],
+  $timeRange: new SceneTimeRange({
+    from: 'now-15m',
+    to: 'now',
+  }),
   url: '/a/slack-kaldb-app',
-  getScene: getLogs,
+  getScene: getExploreScene,
 });
 
 const getSceneApp = () =>
   new SceneApp({
-    pages: [myAppPage],
+    pages: [explorePage],
   });
 
-const Exp = () => {
+const ExploreComponent = () => {
   const scene = useMemo(() => getSceneApp(), []);
-
   return <scene.Component model={scene} />;
 };
 
-// This is used to be able to retrieve the root plugin props anywhere inside the app.
 export const PluginPropsContext = React.createContext<AppRootProps | null>(null);
 
 export class Explore extends React.PureComponent<AppRootProps> {
   render() {
     return (
       <PluginPropsContext.Provider value={this.props}>
-        <Exp />
+        <ExploreComponent />
       </PluginPropsContext.Provider>
     );
   }
 }
-
-// export const Explore: FC<AppRootProps> = ({ query, path, meta }) => {
-//   const scene = getLogs();
-//
-//   console.log('4');
-//   return (
-//     <>
-//       <scene.Component model={getLogs()} />
-//     </>
-//   );
-// };
