@@ -1,6 +1,6 @@
 {
   "name": "slack-kaldb-app",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Grafana KalDB App",
   "scripts": {
     "build": "rm -rf dist && npx grafana-toolkit plugin:build",
