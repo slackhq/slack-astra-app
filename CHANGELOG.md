@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1
+### New features
+* Enabled datasource alerting
+
+### Breaking changes
+N/A
+
+### Bugs squashed
+N/A
+
+
+
 ## 0.1.0
 ### New features
 * Added a button to go to the associated Zipkin trace view
