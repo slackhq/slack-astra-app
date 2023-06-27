@@ -6,6 +6,7 @@
   "metrics": true,
   "backend": true,
   "executable": "gpx_slack_kaldb_app_datasource_backend",
+  "alerting": true,
   "info": {
     "description": "Grafana KalDB App",
     "author": {
