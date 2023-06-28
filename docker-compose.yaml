@@ -12,6 +12,7 @@ services:
     volumes:
       - ./dist:/var/lib/grafana/plugins/slack-kaldb-app
       - ./provisioning:/etc/grafana/provisioning
+      - ./conf/:/var/lib/grafana/conf
     environment:
       GF_LOG_MODE: "console file"
       GF_LOG_LEVEL: "debug"
@@ -19,4 +20,5 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
       GF_PATHS_PLUGINS: "/var/lib/grafana/plugins"
+      GF_PATHS_CONFIG: "/var/lib/grafana/conf/custom.ini"
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "slack-kaldb-app,slack-kaldb-app-backend-datasource"
