@@ -474,7 +474,7 @@ const histogramResultTransformation: CustomTransformOperator = () => (source: Ob
   return source.pipe(
     map((data: DataFrame[]) => {
       if (data.length > 0 && data[0].meta['shards']) {
-        var counter = 0;
+        let counter = 0;
         for (let i = data[0].fields[1].values['buffer'].length - 1; i >= 0; i--) {
           counter += data[0].fields[1].values['buffer'][i];
         }
