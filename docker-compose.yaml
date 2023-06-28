@@ -1,13 +1,17 @@
-version: "3"
+version: '3.0'
+
 services:
   grafana:
-    image: 'grafana/grafana:9.5.3'
-    container_name: slack_kaldb_app_grafana
+    container_name: 'slack-kaldb-app'
+    build:
+      context: ./.config
+      args:
+        grafana_version: ${GRAFANA_VERSION:-9.5.3}
     ports:
-      - '3000:3000'
+      - 3000:3000/tcp
     volumes:
-      - ./provisioning:/etc/grafana/provisioning
       - ./dist:/var/lib/grafana/plugins/slack-kaldb-app
+      - ./provisioning:/etc/grafana/provisioning
     environment:
       GF_LOG_MODE: "console file"
       GF_LOG_LEVEL: "debug"
