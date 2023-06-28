@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0
+### New features
+N/A
+
+### Breaking changes
+* Minimum supported Grafana version moved from 8.0 to 9.5
+
+### Bugs squashed
+* Resolved an issue where attempting to use datasource alerting could return an error of `request handler error: [plugin.unavailable] plugin unavailable`
+* Resolved the deprecation warnings on build system by migrating from `@grafana/toolkit` to `@grafana/create-plugin` 
+
+
 ## 0.1.1
 ### New features
 * Enabled datasource alerting
