@@ -16,7 +16,6 @@ export type MetricAggregationType =
   | 'extended_stats'
   | 'percentiles'
   | 'cardinality'
-  | 'raw_document'
   | 'raw_data'
   | 'logs'
   | PipelineMetricAggregationType;
@@ -127,13 +126,6 @@ export interface UniqueCount extends MetricAggregationWithField {
   settings?: {
     precision_threshold?: string;
     missing?: string;
-  };
-}
-
-interface RawDocument extends BaseMetricAggregation {
-  type: 'raw_document';
-  settings?: {
-    size?: string;
   };
 }
 
@@ -267,7 +259,6 @@ export type MetricAggregationWithSettings =
   | CumulativeSum
   | Derivative
   | RawData
-  | RawDocument
   | UniqueCount
   | Percentiles
   | ExtendedStats
@@ -329,7 +320,6 @@ export const METRIC_AGGREGATION_TYPES = [
   'extended_stats',
   'percentiles',
   'cardinality',
-  'raw_document',
   'raw_data',
   'logs',
   'moving_avg',

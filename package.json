@@ -94,7 +94,8 @@
     "react-virtualized-auto-sizer": "1.0.2",
     "rxjs": "7.8.0",
     "semver": "7.3.7",
-    "tslib": "2.5.3"
+    "tslib": "2.5.3",
+    "yarn": "^1.22.19"
   },
   "engines": {
     "node": ">=16"

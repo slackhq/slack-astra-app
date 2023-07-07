@@ -12,7 +12,7 @@ describe('QueryBuilder', () => {
 
   const allBuilders = [OpenSearch_1_0, ES_2_0, ES_5_0, ES_5_6, ES_6_0, ES_7_0];
 
-  allBuilders.forEach(builder => {
+  allBuilders.forEach((builder) => {
     describe(`version ${builder.flavor} ${builder.version}`, () => {
       it('should return query with defaults', () => {
         const query = builder.build({
@@ -216,59 +216,6 @@ describe('QueryBuilder', () => {
         expect(query.aggs['2'].filters.filters['@metric:cpu'].query_string.query).toBe('@metric:cpu');
         expect(query.aggs['2'].filters.filters['@metric:logins.count'].query_string.query).toBe('@metric:logins.count');
         expect(query.aggs['2'].aggs['4'].date_histogram.field).toBe('@timestamp');
-      });
-
-      it('should return correct query for raw_document metric', () => {
-        const target: OpenSearchQuery = {
-          refId: 'A',
-          metrics: [{ type: 'raw_document', id: '1', settings: {} }],
-          timeField: '@timestamp',
-          bucketAggs: [] as any[],
-        };
-
-        const query = builder.build(target);
-        expect(query).toMatchObject({
-          size: 500,
-          query: {
-            bool: {
-              filter: [
-                {
-                  range: {
-                    '@timestamp': {
-                      format: 'epoch_millis',
-                      gte: '$timeFrom',
-                      lte: '$timeTo',
-                    },
-                  },
-                },
-                {
-                  query_string: {
-                    analyze_wildcard: true,
-                    query: undefined,
-                  },
-                },
-              ],
-            },
-          },
-          sort: {
-            '@timestamp': {
-              order: 'desc',
-              unmapped_type: 'boolean',
-            },
-          },
-          script_fields: {},
-        });
-      });
-
-      it('should set query size from settings when raw_documents', () => {
-        const query = builder.build({
-          refId: 'A',
-          metrics: [{ type: 'raw_document', id: '1', settings: { size: '1337' } }],
-          timeField: '@timestamp',
-          bucketAggs: [],
-        });
-
-        expect(query.size).toBe(1337);
       });
 
       it('with moving average', () => {
