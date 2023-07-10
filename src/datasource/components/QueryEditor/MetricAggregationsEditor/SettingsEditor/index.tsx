@@ -53,11 +53,11 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
         <BucketScriptSettingsEditor value={metric} previousMetrics={previousMetrics} />
       )}
 
-      {(metric.type === 'raw_data' || metric.type === 'raw_document') && (
+      {metric.type === 'raw_data' && (
         <InlineField label="Size" {...inlineFieldProps}>
           <Input
             id={`ES-query-${query.refId}_metric-${metric.id}-size`}
-            onBlur={e => dispatch(changeMetricSetting(metric, 'size', e.target.value))}
+            onBlur={(e) => dispatch(changeMetricSetting(metric, 'size', e.target.value))}
             defaultValue={metric.settings?.size ?? metricAggregationConfig['raw_data'].defaults.settings?.size}
           />
         </InlineField>
@@ -69,11 +69,11 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
 
       {metric.type === 'extended_stats' && (
         <>
-          {extendedStats.map(stat => (
+          {extendedStats.map((stat) => (
             <ExtendedStatSetting
               key={stat.value}
               stat={stat}
-              onChange={checked => dispatch(changeMetricMeta(metric, stat.value, checked))}
+              onChange={(checked) => dispatch(changeMetricMeta(metric, stat.value, checked))}
               value={
                 metric.meta?.[stat.value] !== undefined
                   ? !!metric.meta?.[stat.value]
@@ -89,7 +89,7 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
       {metric.type === 'percentiles' && (
         <InlineField label="Percentiles" {...inlineFieldProps}>
           <Input
-            onBlur={e => dispatch(changeMetricSetting(metric, 'percents', e.target.value.split(',').filter(Boolean)))}
+            onBlur={(e) => dispatch(changeMetricSetting(metric, 'percents', e.target.value.split(',').filter(Boolean)))}
             defaultValue={
               metric.settings?.percents || metricAggregationConfig['percentiles'].defaults.settings?.percents
             }

@@ -53,32 +53,6 @@ describe('OpenSearchResponse', () => {
       },
     };
 
-    const rawDocumentQuery: MockedQueryData = {
-      target: {
-        refId: 'RAW_DOC',
-        metrics: [{ type: 'raw_document', id: 'r_5' }],
-        bucketAggs: [],
-      },
-      response: {
-        hits: {
-          total: 2,
-          hits: [
-            {
-              _id: '5',
-              _type: 'type',
-              _index: 'index',
-              _source: { sourceProp: 'asd' },
-              fields: { fieldProp: 'field' },
-            },
-            {
-              _source: { sourceProp: 'asd2' },
-              fields: { fieldProp: 'field2' },
-            },
-          ],
-        },
-      },
-    };
-
     const percentilesQuery: MockedQueryData = {
       target: {
         refId: 'PERCENTILE',
@@ -165,7 +139,6 @@ describe('OpenSearchResponse', () => {
     const commonTargets = [
       { ...countQuery.target },
       { ...countGroupByHistogramQuery.target },
-      { ...rawDocumentQuery.target },
       { ...percentilesQuery.target },
       { ...extendedStatsQuery.target },
     ];
@@ -173,7 +146,6 @@ describe('OpenSearchResponse', () => {
     const commonResponses = [
       { ...countQuery.response },
       { ...countGroupByHistogramQuery.response },
-      { ...rawDocumentQuery.response },
       { ...percentilesQuery.response },
       { ...extendedStatsQuery.response },
     ];
@@ -221,8 +193,6 @@ describe('OpenSearchResponse', () => {
 
         expect(result.data[1].refId).toBe(countGroupByHistogramQuery.target.refId);
 
-        expect(result.data[2].refId).toBe(rawDocumentQuery.target.refId);
-
         expect(result.data[3].refId).toBe(percentilesQuery.target.refId);
         expect(result.data[4].refId).toBe(percentilesQuery.target.refId);
 
@@ -248,8 +218,6 @@ describe('OpenSearchResponse', () => {
         expect(result.data[0].refId).toBe(countQuery.target.refId);
 
         expect(result.data[1].refId).toBe(countGroupByHistogramQuery.target.refId);
-
-        expect(result.data[2].refId).toBe(rawDocumentQuery.target.refId);
 
         expect(result.data[3].refId).toBe(percentilesQuery.target.refId);
         expect(result.data[4].refId).toBe(percentilesQuery.target.refId);
@@ -975,51 +943,6 @@ describe('OpenSearchResponse', () => {
     });
   });
 
-  describe('Raw documents query', () => {
-    beforeEach(() => {
-      targets = [
-        {
-          refId: 'A',
-          metrics: [{ type: 'raw_document', id: '1' }],
-          bucketAggs: [],
-        },
-      ];
-      response = {
-        responses: [
-          {
-            hits: {
-              total: 100,
-              hits: [
-                {
-                  _id: '1',
-                  _type: 'type',
-                  _index: 'index',
-                  _source: { sourceProp: 'asd' },
-                  fields: { fieldProp: 'field' },
-                },
-                {
-                  _source: { sourceProp: 'asd2' },
-                  fields: { fieldProp: 'field2' },
-                },
-              ],
-            },
-          },
-        ],
-      };
-
-      result = new OpenSearchResponse(targets, response).getTimeSeries();
-    });
-
-    it('should return docs', () => {
-      expect(result.data.length).toBe(1);
-      expect(result.data[0].type).toBe('docs');
-      expect(result.data[0].total).toBe(100);
-      expect(result.data[0].datapoints.length).toBe(2);
-      expect(result.data[0].datapoints[0].sourceProp).toBe('asd');
-      expect(result.data[0].datapoints[0].fieldProp).toBe('field');
-    });
-  });
-
   describe('with bucket_script ', () => {
     let result: any;
 
@@ -1279,7 +1202,7 @@ describe('OpenSearchResponse', () => {
       const result = new OpenSearchResponse(targets, response).getLogs();
       expect(result.data.length).toBe(2);
       const logResults = result.data[0] as MutableDataFrame;
-      const fields = logResults.fields.map(f => {
+      const fields = logResults.fields.map((f) => {
         return {
           name: f.name,
           type: f.type,
@@ -1299,7 +1222,7 @@ describe('OpenSearchResponse', () => {
         expect(r._source).toEqual(
           flatten(
             response.responses[0].hits.hits[i]._source,
-            (null as unknown) as { delimiter?: any; maxDepth?: any; safe?: any }
+            null as unknown as { delimiter?: any; maxDepth?: any; safe?: any }
           )
         );
       }
@@ -1362,7 +1285,7 @@ describe('OpenSearchResponse', () => {
       const result = new OpenSearchResponse(targets, response, targetType).getLogs();
       expect(result.data.length).toBe(1);
       const logResults = result.data[0] as MutableDataFrame;
-      const fields = logResults.fields.map(f => {
+      const fields = logResults.fields.map((f) => {
         return {
           name: f.name,
           type: f.type,
@@ -1419,7 +1342,7 @@ describe('OpenSearchResponse', () => {
       const result = new OpenSearchResponse(targets, response, targetType).getTable();
       expect(result.data.length).toBe(1);
       const logResults = result.data[0] as MutableDataFrame;
-      const fields = logResults.fields.map(f => {
+      const fields = logResults.fields.map((f) => {
         return {
           name: f.name,
           type: f.type,

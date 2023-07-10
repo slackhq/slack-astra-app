@@ -34,7 +34,7 @@ const backendSrv = {
 };
 
 jest.mock('@grafana/runtime', () => ({
-  ...((jest.requireActual('@grafana/runtime') as unknown) as object),
+  ...(jest.requireActual('@grafana/runtime') as unknown as object),
   getBackendSrv: () => backendSrv,
   getDataSourceSrv: () => {
     return {
@@ -44,7 +44,7 @@ jest.mock('@grafana/runtime', () => ({
     };
   },
   getTemplateSrv: () => ({
-    replace: jest.fn(text => {
+    replace: jest.fn((text) => {
       if (text.startsWith('$')) {
         return `resolvedVariable`;
       } else {
@@ -64,7 +64,7 @@ const createTimeRange = (from: DateTime, to: DateTime): TimeRange => ({
   },
 });
 
-describe('OpenSearchDatasource', function(this: any) {
+describe('OpenSearchDatasource', function (this: any) {
   const datasourceRequestMock = jest.spyOn(backendSrv, 'datasourceRequest');
 
   beforeEach(() => {
@@ -95,7 +95,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
     it('should translate index pattern to current day', () => {
       let requestOptions: any;
-      datasourceRequestMock.mockImplementation(options => {
+      datasourceRequestMock.mockImplementation((options) => {
         requestOptions = options;
         return Promise.resolve({ data: {} });
       });
@@ -120,7 +120,7 @@ describe('OpenSearchDatasource', function(this: any) {
         } as OpenSearchOptions,
       } as DataSourceInstanceSettings<OpenSearchOptions>);
 
-      datasourceRequestMock.mockImplementation(options => {
+      datasourceRequestMock.mockImplementation((options) => {
         requestOptions = options;
         return Promise.resolve({
           data: {
@@ -194,7 +194,7 @@ describe('OpenSearchDatasource', function(this: any) {
         } as OpenSearchOptions,
       } as DataSourceInstanceSettings<OpenSearchOptions>);
 
-      datasourceRequestMock.mockImplementation(options => {
+      datasourceRequestMock.mockImplementation((options) => {
         return Promise.resolve(logsResponse);
       });
 
@@ -252,7 +252,7 @@ describe('OpenSearchDatasource', function(this: any) {
         } as OpenSearchOptions,
       } as DataSourceInstanceSettings<OpenSearchOptions>);
 
-      datasourceRequestMock.mockImplementation(options => {
+      datasourceRequestMock.mockImplementation((options) => {
         requestOptions = options;
         return Promise.resolve({ data: { responses: [] } });
       });
@@ -262,7 +262,7 @@ describe('OpenSearchDatasource', function(this: any) {
         targets: [
           {
             refId: 'A',
-            metrics: [{ type: 'raw_document', id: '1' }],
+            metrics: [{ type: 'raw_data', id: '1' }],
             query: 'test',
           },
         ],
@@ -375,7 +375,7 @@ describe('OpenSearchDatasource', function(this: any) {
         } as OpenSearchOptions,
       } as DataSourceInstanceSettings<OpenSearchOptions>);
 
-      datasourceRequestMock.mockImplementation(options => {
+      datasourceRequestMock.mockImplementation((options) => {
         return Promise.resolve({
           data: {
             'genuine.es7._mapping.response': {
@@ -522,7 +522,7 @@ describe('OpenSearchDatasource', function(this: any) {
         } as OpenSearchOptions,
       } as DataSourceInstanceSettings<OpenSearchOptions>);
 
-      datasourceRequestMock.mockImplementation(options => {
+      datasourceRequestMock.mockImplementation((options) => {
         requestOptions = options;
         return Promise.resolve({ data: { responses: [] } });
       });
@@ -568,7 +568,7 @@ describe('OpenSearchDatasource', function(this: any) {
         } as OpenSearchOptions,
       } as DataSourceInstanceSettings<OpenSearchOptions>);
 
-      datasourceRequestMock.mockImplementation(options => {
+      datasourceRequestMock.mockImplementation((options) => {
         requestOptions = options;
         return Promise.resolve({
           data: {
@@ -592,7 +592,7 @@ describe('OpenSearchDatasource', function(this: any) {
         });
       });
 
-      ctx.ds.metricFindQuery('{"find": "terms", "field": "test"}').then(res => {
+      ctx.ds.metricFindQuery('{"find": "terms", "field": "test"}').then((res) => {
         results = res;
       });
 
@@ -666,7 +666,7 @@ describe('OpenSearchDatasource', function(this: any) {
       ];
 
       beforeAll(() => {
-        datasourceRequestMock.mockImplementation(options => {
+        datasourceRequestMock.mockImplementation((options) => {
           payloads.push(options);
           return Promise.resolve({ data: { schema: [], datarows: [] } });
         });
@@ -682,7 +682,7 @@ describe('OpenSearchDatasource', function(this: any) {
 
       it('should handle the data source response', async () => {
         const { ds, options } = setup(targets);
-        await expect(ds.query(options)).toEmitValuesWith(received => {
+        await expect(ds.query(options)).toEmitValuesWith((received) => {
           const result = received[0];
           expect(result).toEqual(
             expect.objectContaining({
@@ -728,7 +728,7 @@ describe('OpenSearchDatasource', function(this: any) {
       };
 
       beforeAll(() => {
-        datasourceRequestMock.mockImplementation(options => {
+        datasourceRequestMock.mockImplementation((options) => {
           payloads.push(options);
           return Promise.resolve(pplTableResponse);
         });
@@ -792,7 +792,7 @@ describe('OpenSearchDatasource', function(this: any) {
       };
 
       beforeAll(() => {
-        datasourceRequestMock.mockImplementation(options => {
+        datasourceRequestMock.mockImplementation((options) => {
           payloads.push(options);
           return Promise.resolve(pplLogsResponse);
         });
@@ -854,7 +854,7 @@ describe('OpenSearchDatasource', function(this: any) {
       };
 
       beforeAll(() => {
-        datasourceRequestMock.mockImplementation(options => {
+        datasourceRequestMock.mockImplementation((options) => {
           payloads.push(options);
           return Promise.resolve(pplTimeSeriesResponse);
         });
@@ -902,7 +902,7 @@ describe('OpenSearchDatasource', function(this: any) {
       ];
 
       beforeAll(() => {
-        datasourceRequestMock.mockImplementation(options => {
+        datasourceRequestMock.mockImplementation((options) => {
           payloads.push(options);
           return Promise.resolve({ data: { schema: [], datarows: [] } });
         });
@@ -915,8 +915,8 @@ describe('OpenSearchDatasource', function(this: any) {
         const secondExpectedQuery = `${defaultPPLQuery} | fields lastname`;
 
         expect(payloads.length).toBe(2);
-        expect(payloads.some(payload => JSON.parse(payload.data).query === firstExpectedQuery));
-        expect(payloads.some(payload => JSON.parse(payload.data).query === secondExpectedQuery));
+        expect(payloads.some((payload) => JSON.parse(payload.data).query === firstExpectedQuery));
+        expect(payloads.some((payload) => JSON.parse(payload.data).query === secondExpectedQuery));
       });
 
       it('should handle the data source responses', async () => {
@@ -957,7 +957,7 @@ describe('OpenSearchDatasource', function(this: any) {
       ];
 
       beforeAll(() => {
-        datasourceRequestMock.mockImplementation(options => {
+        datasourceRequestMock.mockImplementation((options) => {
           payloads.push(options);
           if (options.url === `${OPENSEARCH_MOCK_URL}/_opendistro/_ppl`) {
             return Promise.resolve({ data: { schema: [], datarows: [] } });

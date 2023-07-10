@@ -170,22 +170,6 @@ export const metricAggregationConfig: MetricsConfiguration = {
       pipelineVariables: [defaultPipelineVariable()],
     },
   },
-  raw_document: {
-    label: 'Raw Document (legacy)',
-    requiresField: false,
-    isSingleMetric: true,
-    isPipelineAgg: false,
-    supportsMissing: false,
-    supportsMultipleBucketPaths: false,
-    hasSettings: true,
-    supportsInlineScript: false,
-    hasMeta: false,
-    defaults: {
-      settings: {
-        size: '500',
-      },
-    },
-  },
   raw_data: {
     label: 'Raw Data',
     requiresField: false,
@@ -245,14 +229,14 @@ export const pipelineOptions: PipelineOptions = {
  * @param metrics
  */
 export const getChildren = (metric: MetricAggregation, metrics: MetricAggregation[]): MetricAggregation[] => {
-  const children = metrics.filter(m => {
+  const children = metrics.filter((m) => {
     // TODO: Check this.
     if (isPipelineAggregationWithMultipleBucketPaths(m)) {
-      return m.pipelineVariables?.some(pv => pv.pipelineAgg === metric.id);
+      return m.pipelineVariables?.some((pv) => pv.pipelineAgg === metric.id);
     }
 
     return isMetricAggregationWithField(m) && metric.id === m.field;
   });
 
-  return [...children, ...children.flatMap(child => getChildren(child, metrics))];
+  return [...children, ...children.flatMap((child) => getChildren(child, metrics))];
 };

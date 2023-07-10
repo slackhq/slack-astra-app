@@ -28,7 +28,6 @@ export const useDescription = (metric: MetricAggregation): string => {
       return `Stats: ${selectedStats.length > 0 ? selectedStats.join(', ') : 'None selected'}`;
     }
 
-    case 'raw_document':
     case 'raw_data': {
       const size = metric.settings?.size || 500;
       return `Size: ${size}`;
