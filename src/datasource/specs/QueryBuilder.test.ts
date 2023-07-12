@@ -534,21 +534,7 @@ describe('QueryBuilder', () => {
 
           expect(query.sort).toEqual({ '@timestamp': { order: 'desc', unmapped_type: 'boolean' } });
 
-          const expectedAggs = {
-            // FIXME: It's pretty weak to include this '1' in the test as it's not part of what we are testing here and
-            // might change as a cause of unrelated changes
-            1: {
-              aggs: {},
-              date_histogram: {
-                extended_bounds: { max: '$timeTo', min: '$timeFrom' },
-                field: '@timestamp',
-                format: 'epoch_millis',
-                interval: '$__interval',
-                min_doc_count: 0,
-              },
-            },
-          };
-          expect(query.aggs).toMatchObject(expectedAggs);
+          expect(query.aggs).toBeUndefined();
         });
 
         it('with querystring', () => {
