@@ -63,6 +63,16 @@ export const SettingsEditor = ({ metric, previousMetrics }: Props) => {
         </InlineField>
       )}
 
+      {metric.type === 'logs' && (
+        <InlineField label="Limit" {...inlineFieldProps}>
+          <Input
+            id={`ES-query-${query.refId}_metric-${metric.id}-limit`}
+            onBlur={(e) => dispatch(changeMetricSetting(metric, 'limit', e.target.value))}
+            defaultValue={metric.settings?.limit ?? metricAggregationConfig['logs'].defaults.settings?.limit}
+          />
+        </InlineField>
+      )}
+
       {metric.type === 'cardinality' && (
         <SettingField label="Precision Threshold" metric={metric} settingName="precision_threshold" />
       )}

@@ -422,6 +422,14 @@ export class QueryBuilder {
       },
     };
 
+    // based off of QueryBuilder raw_data
+    let size, metric;
+    if (target.metrics?.[0]?.type === 'logs') {
+      metric = target.metrics[0];
+      // TODO: This default should be somewhere else together with the one used in the UI
+      size = metric.settings?.limit ? parseInt(metric.settings.limit, 10) : 500;
+    }
+
     this.addAdhocFilters(query, adhocFilters);
 
     if (target.query) {
@@ -433,11 +441,11 @@ export class QueryBuilder {
       });
     }
 
-    query = this.documentQuery(query, 500);
+    // todo - use the limit variable to allow users to set this
+    query = this.documentQuery(query, size || 500);
 
     return {
-      ...query,
-      aggs: this.build(target, null, querystring).aggs,
+      ...query
     };
   }
 

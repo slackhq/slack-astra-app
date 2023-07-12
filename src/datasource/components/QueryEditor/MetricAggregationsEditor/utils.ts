@@ -189,13 +189,18 @@ export const metricAggregationConfig: MetricsConfiguration = {
   logs: {
     label: 'Logs',
     requiresField: false,
+    isSingleMetric: true,
     isPipelineAgg: false,
     supportsMissing: false,
     supportsMultipleBucketPaths: false,
-    hasSettings: false,
+    hasSettings: true,
     supportsInlineScript: false,
     hasMeta: false,
-    defaults: {},
+    defaults: {
+      settings: {
+        limit: '500',
+      },
+    },
   },
 };
 

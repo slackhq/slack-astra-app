@@ -19,7 +19,7 @@ import {
 import { OpenSearchResponse } from './OpenSearchResponse';
 import { IndexPattern } from './index_pattern';
 import { QueryBuilder } from './QueryBuilder';
-import { defaultBucketAgg, hasMetricOfType } from './query_def';
+import { hasMetricOfType } from './query_def';
 import { FetchError, getBackendSrv, getDataSourceSrv, getTemplateSrv } from '@grafana/runtime';
 import { DataLinkConfig, Flavor, OpenSearchOptions, OpenSearchQuery, QueryType } from './types';
 import { metricAggregationConfig } from './components/QueryEditor/MetricAggregationsEditor/utils';
@@ -575,8 +575,6 @@ export class OpenSearchDatasource extends DataSourceApi<OpenSearchQuery, OpenSea
 
     let queryObj;
     if (target.isLogsQuery || hasMetricOfType(target, 'logs')) {
-      target.bucketAggs = [defaultBucketAgg()];
-      target.metrics = [];
       // Setting this for metrics queries that are typed as logs
       target.isLogsQuery = true;
       queryObj = this.queryBuilder.getLogsQuery(target, adhocFilters, queryString);
