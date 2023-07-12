@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1
+### New features
+N/A
+
+### Breaking changes
+* Removes deprecated "raw document" type from selectable metric options (prefer "raw data" moving forward)
+
+### Bugs squashed
+* Explore no longer requests an unused aggregation when querying logs
+
 ## 0.2.0
 ### New features
 N/A
