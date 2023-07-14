@@ -21,7 +21,6 @@ import {
   SceneVariableSet,
   TextBoxVariable,
   VariableValueSelectors,
-  VizPanel,
 } from '@grafana/scenes';
 import { AppRootProps, ArrayVector, DataFrame } from '@grafana/data';
 import { DrawStyle, InlineField, Input, Button, InlineLabel, IconButton } from '@grafana/ui';
@@ -52,6 +51,15 @@ const queryStringVariable = new TextBoxVariable({
 interface NodeStatsState extends SceneObjectState {
   total: number;
   failed: number;
+}
+
+interface Field {
+  name: string;
+  type: string;
+}
+
+interface FieldStatsState extends SceneObjectState {
+  fields: Field[];
 }
 
 const NodeStatsRenderer = ({ model }: SceneComponentProps<NodeStats>) => {
@@ -127,8 +135,8 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
         <Input
           defaultValue={queryStringVariable.getValue().toString()}
           placeholder="Lucene Query"
-          onKeyDown={e => (e.key === 'Enter' ? model.doQuery() : null)}
-          onChange={e => model.onTextChange(e.currentTarget.value)}
+          onKeyDown={(e) => (e.key === 'Enter' ? model.doQuery() : null)}
+          onChange={(e) => model.onTextChange(e.currentTarget.value)}
         />
       </InlineField>
       {timeseriesLoading || logsLoading ? (
@@ -150,6 +158,41 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
     </>
   );
 };
+
+const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
+  // TODO: Loading state
+  // const { timeseriesLoading, logsLoading } = model.useState();
+  const { fields } = model.useState();
+
+  return (
+    <>
+      <div>Available fields: {fields.length}</div>
+      <ul>
+        {fields.map((field) => (
+          <li key={field.name}>
+            {field.name} ({field.type})
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+};
+
+class FieldStats extends SceneObjectBase<FieldStatsState> {
+  static Component = KalDBFieldsRenderer;
+  constructor(state?: Partial<FieldStatsState>) {
+    super({
+      fields: [],
+      ...state,
+    });
+  }
+
+  setFields = (fields: Field[]) => {
+    this.setState({
+      fields: fields,
+    });
+  };
+}
 
 class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
   static Component = KaldbQueryRenderer;
@@ -196,6 +239,7 @@ const histogramNodeStats = new NodeStats();
 const logsNodeStats = new NodeStats();
 const resultsCounter = new ResultStats();
 const queryComponent = new KaldbQuery();
+const fieldComponent = new FieldStats();
 
 const getExploreScene = () => {
   return new EmbeddedScene({
@@ -255,14 +299,7 @@ const getExploreScene = () => {
                   }),
                   new SceneFlexItem({
                     height: '100%',
-                    body: new VizPanel({
-                      // todo - placeholder pending terms component
-                      title: '',
-                      pluginId: 'text',
-                      options: {
-                        content: '',
-                      },
-                    }),
+                    body: fieldComponent,
                   }),
                 ],
               }),
@@ -328,7 +365,7 @@ const logsQueryRunner = new SceneQueryRunner({
   ],
 });
 
-logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
+logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
   if (typeof event.payload.newState !== 'undefined') {
     if (event.payload.newState['data'].state === 'Done') {
       queryComponent.setLogsLoading(false);
@@ -337,6 +374,7 @@ logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
     } else if (event.payload.newState['data'].state === 'Error') {
       queryComponent.setLogsLoading(false);
       logsNodeStats.setCount(-1, -1);
+      fieldComponent.setFields([]);
     }
   }
 });
@@ -348,19 +386,32 @@ logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
 const logsResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
   return source.pipe(
     map((data: DataFrame[]) => {
+      // Set log count
       if (data.length > 0 && data[0].meta['shards']) {
         logsNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
       }
+
+      // Set field names
+      if (data.length > 0 && data[0].fields.length > 0) {
+        let mappedFields: Field[] = data[0].fields.map((unmapped_field) => {
+          return {
+            name: unmapped_field.name,
+            type: unmapped_field.type.toString(),
+          };
+        });
+        fieldComponent.setFields(mappedFields);
+      }
+
       return data.map((frame: DataFrame) => {
         return {
           ...frame,
-          fields: frame.fields.map(field => {
+          fields: frame.fields.map((field) => {
             // todo - this should use the config value "message field name"
             if (field.name === '_source') {
               return {
                 ...field,
                 values: new ArrayVector(
-                  field.values.toArray().map(v => {
+                  field.values.toArray().map((v) => {
                     let str = '';
                     for (const [key, value] of Object.entries(v)) {
                       // we specifically choose style code "2" here (dim) because it is the only style
@@ -439,7 +490,7 @@ const histogramQueryRunner = new SceneQueryRunner({
   maxDataPoints: 30,
 });
 
-histogramQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
+histogramQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
   if (typeof event.payload.newState !== 'undefined') {
     if (event.payload.newState['data'].state === 'Done') {
       queryComponent.setTimeseriesLoading(false);
