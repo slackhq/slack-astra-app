@@ -164,13 +164,59 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
   // const { timeseriesLoading, logsLoading } = model.useState();
   const { fields } = model.useState();
 
+  const getIcon = (field: Field): string => {
+    if (field.type === 'string') {
+      return 'fa-li fa fas fa-font';
+    }
+
+    if (field.type === 'time') {
+      return 'fa-li fa far fa-calendar';
+    }
+
+    console.log(field.type);
+    return 'fa-li fa fas fa-question';
+  };
+
+  const getTitle = (field: Field): string => {
+    if (field.type === 'string') {
+      return 'String field';
+    }
+
+    if (field.type === 'time') {
+      return 'Date field';
+    }
+
+    return 'Unknown field';
+  };
+
   return (
     <>
-      <div>Available fields: {fields.length}</div>
-      <ul>
+      <span
+        style={{
+          padding: '15px',
+          fontWeight: 'bold',
+        }}
+      >
+        Available fields: {fields.length}
+      </span>
+      <ul className="fa-ul">
         {fields.map((field) => (
           <li key={field.name}>
-            {field.name} ({field.type})
+            <div
+              style={{
+                paddingTop: '10px',
+                fontFamily: 'monospace',
+              }}
+            >
+              <i
+                className={getIcon(field)}
+                title={getTitle(field)}
+                style={{
+                  paddingTop: '12px',
+                }}
+              ></i>
+              {field.name}
+            </div>
           </li>
         ))}
       </ul>
@@ -276,6 +322,8 @@ const getExploreScene = () => {
               maxWidth: 300,
               body: new SceneFlexLayout({
                 direction: 'column',
+                width: '20%',
+                maxWidth: 100,
                 children: [
                   new SceneFlexLayout({
                     height: 35,
