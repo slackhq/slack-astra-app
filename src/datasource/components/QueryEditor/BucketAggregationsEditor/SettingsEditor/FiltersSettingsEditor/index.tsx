@@ -17,7 +17,7 @@ export const FiltersSettingsEditor = ({ value }: Props) => {
   const upperStateDispatch = useDispatch<BucketAggregationAction<Filters>>();
 
   const dispatch = useStatelessReducer(
-    newState => upperStateDispatch(changeBucketAggregationSetting(value, 'filters', newState)),
+    (newState) => upperStateDispatch(changeBucketAggregationSetting(value, 'filters', newState)),
     value.settings?.filters,
     filtersReducer
   );
@@ -46,8 +46,19 @@ export const FiltersSettingsEditor = ({ value }: Props) => {
             `}
           >
             <div
+              /*
+              Unfortunately Grfana supplies no way to specify the minimum width for the QueryField and also make it so
+              that when the string is empty it becomes unclickable. This means that if you ever delete the full query,
+              you're no longer able to add a new query until you refresh. Since they also provide no way for us to pass
+              in our own custom style, we have to use a CSS selector to selectively override the class with our own
+              properties, which is what is down below. I confirmed that the value I selected for it is hardcoded in
+              the code, so it should continue to work until we/they change it
+              Link to the relevant code is here: https://github.com/grafana/grafana/blob/03c2efa2d6c2774c60b221f0b4481b4ac5d9efb5/packages/grafana-ui/src/components/QueryField/QueryField.tsx#L212
+               */
               className={css`
-                width: 250px;
+                div[class^='slate-query-field'] {
+                  min-width: 250px;
+                }
               `}
             >
               <InlineField label="Query" labelWidth={10}>
@@ -55,7 +66,7 @@ export const FiltersSettingsEditor = ({ value }: Props) => {
                   placeholder="Lucene Query"
                   portalOrigin="opensearch"
                   onBlur={() => {}}
-                  onChange={query => dispatch(changeFilter(index, { ...filter, query }))}
+                  onChange={(query) => dispatch(changeFilter(index, { ...filter, query }))}
                   query={filter.query}
                 />
               </InlineField>
@@ -63,7 +74,7 @@ export const FiltersSettingsEditor = ({ value }: Props) => {
             <InlineField label="Label" labelWidth={10}>
               <Input
                 placeholder="Label"
-                onBlur={e => dispatch(changeFilter(index, { ...filter, label: e.target.value }))}
+                onBlur={(e) => dispatch(changeFilter(index, { ...filter, label: e.target.value }))}
                 defaultValue={filter.label}
               />
             </InlineField>
