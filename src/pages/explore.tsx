@@ -170,6 +170,30 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
       return 'fa-li fa fas fa-font';
     }
 
+    if (field.type === 'text') {
+      return 'fa-li fa fas fa-font';
+    }
+
+    if (field.type === 'integer') {
+      return 'fa-li fa fas fa-hashtag';
+    }
+
+    if (field.type === 'float') {
+      return 'fa-li fa fas fa-hashtag';
+    }
+
+    if (field.type === 'double') {
+      return 'fa-li fa fas fa-hashtag';
+    }
+
+    if (field.type === 'long') {
+      return 'fa-li fa fas fa-hashtag';
+    }
+
+    if (field.type === 'boolean') {
+      return 'fa-li fa fas fa-lightbulb';
+    }
+
     if (field.type === 'time') {
       return 'fa-li fa far fa-calendar';
     }
@@ -180,6 +204,30 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
   const getTitle = (field: Field): string => {
     if (field.type === 'string') {
       return 'String field';
+    }
+
+    if (field.type === 'text') {
+      return 'Text field';
+    }
+
+    if (field.type === 'integer') {
+      return 'Integer field';
+    }
+
+    if (field.type === 'float') {
+      return 'Float field';
+    }
+
+    if (field.type === 'double') {
+      return 'Double field';
+    }
+
+    if (field.type === 'long') {
+      return 'Long field';
+    }
+
+    if (field.type === 'boolean') {
+      return 'Boolean field';
     }
 
     if (field.type === 'time') {
