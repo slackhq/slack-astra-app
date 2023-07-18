@@ -21,10 +21,9 @@ import {
   SceneVariableSet,
   TextBoxVariable,
   VariableValueSelectors,
-  VizPanel,
 } from '@grafana/scenes';
 import { AppRootProps, ArrayVector, DataFrame } from '@grafana/data';
-import { DrawStyle, InlineField, Input, Button, InlineLabel, IconButton } from '@grafana/ui';
+import { Button, DrawStyle, IconButton, InlineField, InlineLabel, Input } from '@grafana/ui';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { VariableHide } from '@grafana/schema';
@@ -52,6 +51,16 @@ const queryStringVariable = new TextBoxVariable({
 interface NodeStatsState extends SceneObjectState {
   total: number;
   failed: number;
+}
+
+interface Field {
+  name: string;
+  type: string;
+}
+
+interface FieldStatsState extends SceneObjectState {
+  fields: Field[];
+  topTenMostPopularFields: Field[];
 }
 
 const NodeStatsRenderer = ({ model }: SceneComponentProps<NodeStats>) => {
@@ -127,8 +136,8 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
         <Input
           defaultValue={queryStringVariable.getValue().toString()}
           placeholder="Lucene Query"
-          onKeyDown={e => (e.key === 'Enter' ? model.doQuery() : null)}
-          onChange={e => model.onTextChange(e.currentTarget.value)}
+          onKeyDown={(e) => (e.key === 'Enter' ? model.doQuery() : null)}
+          onChange={(e) => model.onTextChange(e.currentTarget.value)}
         />
       </InlineField>
       {timeseriesLoading || logsLoading ? (
@@ -150,6 +159,186 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
     </>
   );
 };
+
+const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
+  // TODO: Loading state
+  // const { timeseriesLoading, logsLoading } = model.useState();
+  const { fields, topTenMostPopularFields } = model.useState();
+
+  const getIcon = (field: Field): string => {
+    if (field.type === 'string') {
+      return 'fa-li fa fas fa-font';
+    }
+
+    if (field.type === 'text') {
+      return 'fa-li fa fas fa-font';
+    }
+
+    if (field.type === 'integer') {
+      return 'fa-li fa fas fa-hashtag';
+    }
+
+    if (field.type === 'float') {
+      return 'fa-li fa fas fa-hashtag';
+    }
+
+    if (field.type === 'double') {
+      return 'fa-li fa fas fa-hashtag';
+    }
+
+    if (field.type === 'long') {
+      return 'fa-li fa fas fa-hashtag';
+    }
+
+    if (field.type === 'boolean') {
+      return 'fa-li fa fas fa-lightbulb';
+    }
+
+    if (field.type === 'time') {
+      return 'fa-li fa far fa-calendar';
+    }
+
+    return 'fa-li fa fas fa-question';
+  };
+
+  const getTitle = (field: Field): string => {
+    if (field.type === 'string') {
+      return 'String field';
+    }
+
+    if (field.type === 'text') {
+      return 'Text field';
+    }
+
+    if (field.type === 'integer') {
+      return 'Integer field';
+    }
+
+    if (field.type === 'float') {
+      return 'Float field';
+    }
+
+    if (field.type === 'double') {
+      return 'Double field';
+    }
+
+    if (field.type === 'long') {
+      return 'Long field';
+    }
+
+    if (field.type === 'boolean') {
+      return 'Boolean field';
+    }
+
+    if (field.type === 'time') {
+      return 'Date field';
+    }
+
+    return 'Unknown field';
+  };
+
+  return (
+    <>
+      <span
+        style={{
+          padding: '15px',
+          fontWeight: 'bold',
+        }}
+      >
+        Available fields: {fields.length}
+      </span>
+      <div
+        style={{
+          backgroundColor: '#e6f1fa',
+        }}
+      >
+        <span
+          style={{
+            padding: '15px',
+            fontWeight: 'bold',
+          }}
+        >
+          Popular
+        </span>
+        <ul className="fa-ul">
+          {topTenMostPopularFields.map((field) => (
+            <li
+              key={field.name}
+              style={{
+                maxWidth: '200px',
+              }}
+            >
+              <div
+                style={{
+                  paddingTop: '10px',
+                  fontFamily: 'monospace',
+                }}
+              >
+                <i
+                  className={getIcon(field)}
+                  title={getTitle(field)}
+                  style={{
+                    paddingTop: '12px',
+                  }}
+                ></i>
+                {field.name}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <ul className="fa-ul">
+        {fields.map((field) => (
+          <li
+            key={field.name}
+            style={{
+              maxWidth: '200px',
+            }}
+          >
+            <div
+              style={{
+                paddingTop: '10px',
+                fontFamily: 'monospace',
+              }}
+            >
+              <i
+                className={getIcon(field)}
+                title={getTitle(field)}
+                style={{
+                  paddingTop: '12px',
+                }}
+              ></i>
+              {field.name}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+};
+
+class FieldStats extends SceneObjectBase<FieldStatsState> {
+  static Component = KalDBFieldsRenderer;
+  constructor(state?: Partial<FieldStatsState>) {
+    super({
+      fields: [],
+      topTenMostPopularFields: [],
+      ...state,
+    });
+  }
+
+  setTopTenMostPopularFields = (fields: Field[]) => {
+    this.setState({
+      topTenMostPopularFields: fields,
+    });
+  };
+
+  setFields = (fields: Field[]) => {
+    this.setState({
+      fields: fields,
+    });
+  };
+}
 
 class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
   static Component = KaldbQueryRenderer;
@@ -196,6 +385,7 @@ const histogramNodeStats = new NodeStats();
 const logsNodeStats = new NodeStats();
 const resultsCounter = new ResultStats();
 const queryComponent = new KaldbQuery();
+const fieldComponent = new FieldStats();
 
 const getExploreScene = () => {
   return new EmbeddedScene({
@@ -232,6 +422,8 @@ const getExploreScene = () => {
               maxWidth: 300,
               body: new SceneFlexLayout({
                 direction: 'column',
+                width: '20%',
+                maxWidth: 100,
                 children: [
                   new SceneFlexLayout({
                     height: 35,
@@ -255,14 +447,7 @@ const getExploreScene = () => {
                   }),
                   new SceneFlexItem({
                     height: '100%',
-                    body: new VizPanel({
-                      // todo - placeholder pending terms component
-                      title: '',
-                      pluginId: 'text',
-                      options: {
-                        content: '',
-                      },
-                    }),
+                    body: fieldComponent,
                   }),
                 ],
               }),
@@ -328,7 +513,7 @@ const logsQueryRunner = new SceneQueryRunner({
   ],
 });
 
-logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
+logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
   if (typeof event.payload.newState !== 'undefined') {
     if (event.payload.newState['data'].state === 'Done') {
       queryComponent.setLogsLoading(false);
@@ -337,6 +522,8 @@ logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
     } else if (event.payload.newState['data'].state === 'Error') {
       queryComponent.setLogsLoading(false);
       logsNodeStats.setCount(-1, -1);
+      fieldComponent.setFields([]);
+      fieldComponent.setTopTenMostPopularFields([]);
     }
   }
 });
@@ -348,19 +535,58 @@ logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
 const logsResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
   return source.pipe(
     map((data: DataFrame[]) => {
+      // Set log count
       if (data.length > 0 && data[0].meta['shards']) {
         logsNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
       }
+
+      // Set field names and most popular fields
+      if (data.length > 0 && data[0].fields.length > 0) {
+        let fieldCounts: Map<string, number> = new Map<string, number>();
+
+        let mappedFields: Map<string, Field> = new Map<string, Field>();
+        data[0].fields.map((unmapped_field) => {
+          let mapped_field: Field = {
+            name: unmapped_field.name,
+            type: unmapped_field.type.toString(),
+          };
+
+          fieldCounts.set(
+            unmapped_field.name,
+            unmapped_field.values.toArray().filter((value) => value !== undefined).length
+          );
+          mappedFields.set(unmapped_field.name, mapped_field);
+        });
+
+        let sortedFieldCounts: Map<string, number> = new Map([...fieldCounts].sort((a, b) => (a[1] >= b[1] ? -1 : 0)));
+        let topTenMostPopularFields: Field[] = [];
+        let i = 0;
+        for (let [name, _count] of sortedFieldCounts) {
+          if (i === 10) {
+            break;
+          }
+
+          // Add the name to the top ten field and remove it from the mapped fields, which is used to display all the
+          // others. This way we don't double-display
+          topTenMostPopularFields.push(mappedFields.get(name));
+          mappedFields.delete(name);
+          i++;
+        }
+
+        fieldComponent.setFields([...mappedFields.values()]);
+        fieldComponent.setTopTenMostPopularFields(topTenMostPopularFields);
+      }
+
       return data.map((frame: DataFrame) => {
         return {
           ...frame,
-          fields: frame.fields.map(field => {
+          fields: frame.fields.map((field) => {
             // todo - this should use the config value "message field name"
             if (field.name === '_source') {
               return {
                 ...field,
                 values: new ArrayVector(
-                  field.values.toArray().map(v => {
+                  field.values.toArray().map((v) => {
                     let str = '';
                     for (const [key, value] of Object.entries(v)) {
                       // we specifically choose style code "2" here (dim) because it is the only style
@@ -439,7 +665,7 @@ const histogramQueryRunner = new SceneQueryRunner({
   maxDataPoints: 30,
 });
 
-histogramQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, event => {
+histogramQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
   if (typeof event.payload.newState !== 'undefined') {
     if (event.payload.newState['data'].state === 'Done') {
       queryComponent.setTimeseriesLoading(false);
