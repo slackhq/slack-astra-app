@@ -174,7 +174,6 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
       return 'fa-li fa far fa-calendar';
     }
 
-    console.log(field.type);
     return 'fa-li fa fas fa-question';
   };
 
