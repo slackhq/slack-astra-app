@@ -23,10 +23,12 @@ import {
   VariableValueSelectors,
 } from '@grafana/scenes';
 import { AppRootProps, ArrayVector, DataFrame } from '@grafana/data';
-import { Button, DrawStyle, IconButton, InlineField, InlineLabel, Input } from '@grafana/ui';
+import { Button, DrawStyle, HorizontalGroup, IconButton, InlineField, InlineLabel, Input } from '@grafana/ui';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { VariableHide } from '@grafana/schema';
+import { Field, ValueFrequency } from 'datasource/types';
+import { FieldValueFrequency } from '../datasource/components/FieldValueFrequency';
 
 /**
  * The main explore component for KalDB, using the new Grafana scenes implementation.
@@ -51,11 +53,6 @@ const queryStringVariable = new TextBoxVariable({
 interface NodeStatsState extends SceneObjectState {
   total: number;
   failed: number;
-}
-
-interface Field {
-  name: string;
-  type: string;
 }
 
 interface FieldStatsState extends SceneObjectState {
@@ -167,38 +164,38 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
 
   const getIcon = (field: Field): string => {
     if (field.type === 'string') {
-      return 'fa-li fa fas fa-font';
+      return 'fa fas fa-font';
     }
 
     if (field.type === 'text') {
-      return 'fa-li fa fas fa-font';
+      return 'fa fas fa-font';
     }
 
     if (field.type === 'integer') {
-      return 'fa-li fa fas fa-hashtag';
+      return 'fa fas fa-hashtag';
     }
 
     if (field.type === 'float') {
-      return 'fa-li fa fas fa-hashtag';
+      return 'fa fas fa-hashtag';
     }
 
     if (field.type === 'double') {
-      return 'fa-li fa fas fa-hashtag';
+      return 'fa fas fa-hashtag';
     }
 
     if (field.type === 'long') {
-      return 'fa-li fa fas fa-hashtag';
+      return 'fa fas fa-hashtag';
     }
 
     if (field.type === 'boolean') {
-      return 'fa-li fa fas fa-lightbulb';
+      return 'fa fas fa-lightbulb';
     }
 
     if (field.type === 'time') {
-      return 'fa-li fa far fa-calendar';
+      return 'fa far fa-calendar';
     }
 
-    return 'fa-li fa fas fa-question';
+    return 'fa fas fa-question';
   };
 
   const getTitle = (field: Field): string => {
@@ -260,57 +257,71 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
         >
           Popular
         </span>
-        <ul className="fa-ul">
+        <ul
+          className="fa-ul"
+          style={{
+            maxWidth: '250px',
+          }}
+        >
           {topTenMostPopularFields.map((field) => (
-            <li
-              key={field.name}
-              style={{
-                maxWidth: '200px',
-              }}
-            >
-              <div
+            <div key={field.name}>
+              <li
                 style={{
-                  paddingTop: '10px',
-                  fontFamily: 'monospace',
+                  maxWidth: '200px',
+                  cursor: 'pointer',
                 }}
               >
-                <i
-                  className={getIcon(field)}
-                  title={getTitle(field)}
-                  style={{
-                    paddingTop: '12px',
-                  }}
-                ></i>
-                {field.name}
-              </div>
-            </li>
+                <FieldValueFrequency field={field}>
+                  <div>
+                    <HorizontalGroup>
+                      <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
+                      <span
+                        style={{
+                          paddingTop: '10px',
+                          fontFamily: 'monospace',
+                        }}
+                      >
+                        {field.name}
+                      </span>
+                    </HorizontalGroup>
+                  </div>
+                </FieldValueFrequency>
+              </li>
+            </div>
           ))}
         </ul>
       </div>
-      <ul className="fa-ul">
+      <ul
+        className="fa-ul"
+        style={{
+          maxWidth: '250px',
+        }}
+      >
         {fields.map((field) => (
-          <li
-            key={field.name}
-            style={{
-              maxWidth: '200px',
-            }}
-          >
-            <div
+          <div key={field.name}>
+            <li
               style={{
-                paddingTop: '10px',
-                fontFamily: 'monospace',
+                // maxWidth: '200px',
+                cursor: 'pointer',
               }}
             >
-              <i
-                className={getIcon(field)}
-                title={getTitle(field)}
-                style={{
-                  paddingTop: '12px',
-                }}
-              ></i>
-              {field.name}
-            </div>
-          </li>
+              <FieldValueFrequency field={field}>
+                <div>
+                  <HorizontalGroup>
+                    <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
+                    <span
+                      style={{
+                        paddingTop: '10px',
+                        fontFamily: 'monospace',
+                      }}
+                    >
+                      {field.name}
+                    </span>
+                  </HorizontalGroup>
+                </div>
+              </FieldValueFrequency>
+            </li>
+          </div>
         ))}
       </ul>
     </>
@@ -326,7 +337,6 @@ class FieldStats extends SceneObjectBase<FieldStatsState> {
       ...state,
     });
   }
-
   setTopTenMostPopularFields = (fields: Field[]) => {
     this.setState({
       topTenMostPopularFields: fields,
@@ -528,6 +538,25 @@ logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
   }
 });
 
+/*
+ * Calculates the frequency map for a list of values.
+ * The map returned is in sorted descending order
+ */
+function getFrequencyMap<T>(values: T[]): Map<string, number> {
+  let frequencyMap = new Map<string, number>();
+  for (let value of values) {
+    if (value === undefined) {
+      continue;
+    }
+
+    let stringValue = JSON.stringify(value);
+
+    let currentCount = frequencyMap.has(stringValue) ? frequencyMap.get(stringValue) : 0;
+    frequencyMap.set(stringValue, currentCount + 1);
+  }
+  return new Map([...frequencyMap].sort((a, b) => (a[1] >= b[1] ? -1 : 0)));
+}
+
 /**
  * This custom transform operation is used to rewrite the _source field to an ansi log line, as
  * well as initialize the meta information used for debugging purposes.
@@ -540,21 +569,39 @@ const logsResultTransformation: CustomTransformOperator = () => (source: Observa
         logsNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
       }
 
-      // Set field names and most popular fields
+      // Set field names, the most popular fields, and calculates the frequency of the most common values
       if (data.length > 0 && data[0].fields.length > 0) {
         let fieldCounts: Map<string, number> = new Map<string, number>();
 
         let mappedFields: Map<string, Field> = new Map<string, Field>();
         data[0].fields.map((unmapped_field) => {
+          let frequencyMapForField = getFrequencyMap(unmapped_field.values.toArray());
+          let topFiveMostPopularValues: ValueFrequency[] = [];
+          let i = 0;
+          for (let [value, _count] of frequencyMapForField) {
+            if (i === 5) {
+              break;
+            }
+            let definedCount = unmapped_field.values.toArray().filter((value) => value !== undefined).length;
+            let valueFreq: ValueFrequency = {
+              value: value,
+              frequency: _count / definedCount,
+            };
+            topFiveMostPopularValues.push(valueFreq);
+            i++;
+          }
+
+          let logsWithDefinedValue = unmapped_field.values.toArray().filter((value) => value !== undefined).length;
+
           let mapped_field: Field = {
             name: unmapped_field.name,
             type: unmapped_field.type.toString(),
+            mostCommonValues: topFiveMostPopularValues,
+            numberOfLogsFieldIsIn: logsWithDefinedValue,
+            totalNumberOfLogs: unmapped_field.values.length,
           };
 
-          fieldCounts.set(
-            unmapped_field.name,
-            unmapped_field.values.toArray().filter((value) => value !== undefined).length
-          );
+          fieldCounts.set(unmapped_field.name, logsWithDefinedValue);
           mappedFields.set(unmapped_field.name, mapped_field);
         });
 

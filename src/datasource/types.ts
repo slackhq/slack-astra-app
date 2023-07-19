@@ -94,3 +94,16 @@ export enum Flavor {
   OpenSearch = 'opensearch',
   KalDB = 'kaldb',
 }
+
+export interface ValueFrequency {
+  value: string;
+  frequency: number;
+}
+
+export interface Field {
+  name: string;
+  type: string;
+  mostCommonValues: ValueFrequency[];
+  numberOfLogsFieldIsIn: number;
+  totalNumberOfLogs: number;
+}
