@@ -301,7 +301,6 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
           <div key={field.name}>
             <li
               style={{
-                // maxWidth: '200px',
                 cursor: 'pointer',
               }}
             >
@@ -574,15 +573,16 @@ const logsResultTransformation: CustomTransformOperator = () => (source: Observa
         let fieldCounts: Map<string, number> = new Map<string, number>();
 
         let mappedFields: Map<string, Field> = new Map<string, Field>();
-        data[0].fields.map((unmapped_field) => {
-          let frequencyMapForField = getFrequencyMap(unmapped_field.values.toArray());
+        data[0].fields.map((unmappedField) => {
+          let unmappedFieldValuesArray = unmappedField.values.toArray();
+          let frequencyMapForField = getFrequencyMap(unmappedFieldValuesArray);
           let topFiveMostPopularValues: ValueFrequency[] = [];
           let i = 0;
           for (let [value, _count] of frequencyMapForField) {
             if (i === 5) {
               break;
             }
-            let definedCount = unmapped_field.values.toArray().filter((value) => value !== undefined).length;
+            let definedCount = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
             let valueFreq: ValueFrequency = {
               value: value,
               frequency: _count / definedCount,
@@ -591,18 +591,18 @@ const logsResultTransformation: CustomTransformOperator = () => (source: Observa
             i++;
           }
 
-          let logsWithDefinedValue = unmapped_field.values.toArray().filter((value) => value !== undefined).length;
+          let logsWithDefinedValue = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
 
           let mapped_field: Field = {
-            name: unmapped_field.name,
-            type: unmapped_field.type.toString(),
+            name: unmappedField.name,
+            type: unmappedField.type.toString(),
             mostCommonValues: topFiveMostPopularValues,
             numberOfLogsFieldIsIn: logsWithDefinedValue,
-            totalNumberOfLogs: unmapped_field.values.length,
+            totalNumberOfLogs: unmappedField.values.length,
           };
 
-          fieldCounts.set(unmapped_field.name, logsWithDefinedValue);
-          mappedFields.set(unmapped_field.name, mapped_field);
+          fieldCounts.set(unmappedField.name, logsWithDefinedValue);
+          mappedFields.set(unmappedField.name, mapped_field);
         });
 
         let sortedFieldCounts: Map<string, number> = new Map([...fieldCounts].sort((a, b) => (a[1] >= b[1] ? -1 : 0)));
