@@ -472,8 +472,6 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
       }
     }
 
-    // TOOD: REMOVE
-    console.log(`Fully formed query: ${newQuery}`);
     this.setState({
       query: newQuery,
     });
