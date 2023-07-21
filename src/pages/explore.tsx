@@ -345,8 +345,6 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
 };
 
 const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
-  // TODO: Loading state
-  // const { timeseriesLoading, logsLoading } = model.useState();
   const { fields, topTenMostPopularFields, visible, loading } = model.useState();
 
   const getFoldIcon = () => {
