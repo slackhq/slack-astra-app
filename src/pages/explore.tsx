@@ -23,7 +23,18 @@ import {
   VariableValueSelectors,
 } from '@grafana/scenes';
 import { AppRootProps, ArrayVector, DataFrame } from '@grafana/data';
-import { Button, DrawStyle, HorizontalGroup, IconButton, InlineField, InlineLabel, Input } from '@grafana/ui';
+import {
+  Button,
+  DrawStyle,
+  HorizontalGroup,
+  VerticalGroup,
+  IconButton,
+  InlineField,
+  InlineLabel,
+  Input,
+  Counter,
+  LoadingPlaceholder,
+} from '@grafana/ui';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { VariableHide } from '@grafana/schema';
@@ -58,6 +69,8 @@ interface NodeStatsState extends SceneObjectState {
 interface FieldStatsState extends SceneObjectState {
   fields: Field[];
   topTenMostPopularFields: Field[];
+  visible: boolean;
+  loading: boolean;
 }
 
 const NodeStatsRenderer = ({ model }: SceneComponentProps<NodeStats>) => {
@@ -132,6 +145,10 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
       <InlineField label="Query" grow={true}>
         <Input
           defaultValue={queryStringVariable.getValue().toString()}
+          // This is a bit of a hack to get the defaultValue to update after the user has made some changes and then
+          // we try to update the queryStringVariable for them again.
+          // Link to StackOverflow discussion: https://stackoverflow.com/questions/30146105/react-input-defaultvalue-doesnt-update-with-state
+          key={queryStringVariable.getValue().toString()}
           placeholder="Lucene Query"
           onKeyDown={(e) => (e.key === 'Enter' ? model.doQuery() : null)}
           onChange={(e) => model.onTextChange(e.currentTarget.value)}
@@ -157,11 +174,7 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
   );
 };
 
-const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
-  // TODO: Loading state
-  // const { timeseriesLoading, logsLoading } = model.useState();
-  const { fields, topTenMostPopularFields } = model.useState();
-
+const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
   const getIcon = (field: Field): string => {
     if (field.type === 'string') {
       return 'fa fas fa-font';
@@ -235,15 +248,7 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
   };
 
   return (
-    <>
-      <span
-        style={{
-          padding: '15px',
-          fontWeight: 'bold',
-        }}
-      >
-        Available fields: {fields.length}
-      </span>
+    <div>
       <div
         style={{
           backgroundColor: '#e6f1fa',
@@ -271,7 +276,13 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
                   cursor: 'pointer',
                 }}
               >
-                <FieldValueFrequency field={field}>
+                <FieldValueFrequency
+                  field={field}
+                  onPlusClick={(field: Field, value: string) => queryComponent.appendToQuery(`${field.name}: ${value}`)}
+                  onMinusClick={(field: Field, value: string) =>
+                    queryComponent.appendToQuery(`NOT ${field.name}: ${value}`)
+                  }
+                >
                   <div>
                     <HorizontalGroup>
                       <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
@@ -304,7 +315,13 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
                 cursor: 'pointer',
               }}
             >
-              <FieldValueFrequency field={field}>
+              <FieldValueFrequency
+                field={field}
+                onPlusClick={(field: Field, value: string) => queryComponent.appendToQuery(`${field.name}: ${value}`)}
+                onMinusClick={(field: Field, value: string) =>
+                  queryComponent.appendToQuery(`NOT ${field.name}: ${value}`)
+                }
+              >
                 <div>
                   <HorizontalGroup>
                     <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
@@ -323,6 +340,49 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
           </div>
         ))}
       </ul>
+    </div>
+  );
+};
+
+const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
+  const { fields, topTenMostPopularFields, visible, loading } = model.useState();
+
+  const getFoldIcon = () => {
+    if (visible) {
+      return 'angle-down';
+    }
+    return 'angle-right';
+  };
+
+  return (
+    <>
+      {loading ? (
+        <LoadingPlaceholder text={'Loading...'} />
+      ) : (
+        <VerticalGroup>
+          <HorizontalGroup spacing={'lg'} justify={'space-between'}>
+            <HorizontalGroup spacing={'xs'} justify={'flex-start'}>
+              <Button
+                size={'sm'}
+                variant={'secondary'}
+                icon={getFoldIcon()}
+                onClick={() => fieldComponent.setVisible(!visible)}
+              ></Button>
+              <span
+                style={{
+                  padding: '15px',
+                  fontWeight: 'bold',
+                }}
+              >
+                Available fields:
+              </span>
+            </HorizontalGroup>
+
+            <Counter value={fields.length} />
+          </HorizontalGroup>
+          {visible ? KalDBFieldsList(fields, topTenMostPopularFields) : null}
+        </VerticalGroup>
+      )}
     </>
   );
 };
@@ -333,12 +393,26 @@ class FieldStats extends SceneObjectBase<FieldStatsState> {
     super({
       fields: [],
       topTenMostPopularFields: [],
+      visible: true,
+      loading: true,
       ...state,
     });
   }
   setTopTenMostPopularFields = (fields: Field[]) => {
     this.setState({
       topTenMostPopularFields: fields,
+    });
+  };
+
+  setLoading = (loading: boolean) => {
+    this.setState({
+      loading: loading,
+    });
+  };
+
+  setVisible = (visible: boolean) => {
+    this.setState({
+      visible: visible,
     });
   };
 
@@ -375,6 +449,34 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
         query: query,
       });
     }
+  };
+
+  appendToQuery = (query: string) => {
+    let currentQuery = this.state.query;
+    let newQuery = '';
+    let currentQueryIsBlank = currentQuery.replace(' ', '').length === 0;
+
+    // Append the new query to the current one. Handle the case of there already being a whitespace at the end,
+    // and the edge case of the current query being empty
+    if (currentQuery.endsWith(' ')) {
+      if (currentQueryIsBlank) {
+        newQuery = currentQuery + query;
+      } else {
+        newQuery = currentQuery + 'AND ' + query;
+      }
+    } else {
+      if (currentQueryIsBlank) {
+        newQuery = query;
+      } else {
+        newQuery = currentQuery + ' AND ' + query;
+      }
+    }
+
+    this.setState({
+      query: newQuery,
+    });
+
+    this.doQuery();
   };
 
   setLogsLoading = (loading: boolean) => {
@@ -526,13 +628,16 @@ logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
   if (typeof event.payload.newState !== 'undefined') {
     if (event.payload.newState['data'].state === 'Done') {
       queryComponent.setLogsLoading(false);
+      fieldComponent.setLoading(false);
     } else if (event.payload.newState['data'].state === 'Loading') {
       queryComponent.setLogsLoading(true);
+      fieldComponent.setLoading(true);
     } else if (event.payload.newState['data'].state === 'Error') {
       queryComponent.setLogsLoading(false);
       logsNodeStats.setCount(-1, -1);
       fieldComponent.setFields([]);
       fieldComponent.setTopTenMostPopularFields([]);
+      fieldComponent.setLoading(false);
     }
   }
 });
