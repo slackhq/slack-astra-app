@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0
+### New features
+* Added a sidebar that displays all the detected fields in the logs returned
+* Added a popover on the sidebar that when clicked will show detailed statistics about the values of a given field
+* Added buttons to the popover sidebar UI that allows you to filter fields by one of the values shown (either positively
+or negatively), added loading indicators, folding, and various other small touchups
+
+### Breaking changes
+N/A
+
+### Bugs squashed
+N/A
+
 ## 0.2.1
 ### New features
 N/A
