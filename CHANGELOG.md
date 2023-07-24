@@ -11,7 +11,10 @@ or negatively), added loading indicators, folding, and various other small touch
 N/A
 
 ### Bugs squashed
-N/A
+* Fixed an issue in the explore UI where queries over `250px` wide in the filter query textbox would cause the textbox to 
+go behind other components
+* Fixed an issue in the explore UI where if you cleared out all of the text from the filter query textbox you would be
+unable to add more text
 
 ## 0.2.1
 ### New features
