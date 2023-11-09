@@ -34,6 +34,7 @@ import {
   Input,
   Counter,
   LoadingPlaceholder,
+  useTheme2
 } from '@grafana/ui';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -247,11 +248,12 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
     return 'Unknown field';
   };
 
+
   return (
     <div>
       <div
         style={{
-          backgroundColor: '#e6f1fa',
+          backgroundColor: useTheme2().isDark ? '#343741' : '#e6f1fa',
         }}
       >
         <span
