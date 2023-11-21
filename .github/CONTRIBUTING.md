@@ -93,15 +93,15 @@ There are more details about processes and workflow in the [Maintainer's Guide](
 
 #### Proxying
 Depending on your setup, it may be advantageous for you to setup a proxy from your
-local machine to a KalDB query node running in a cloud environment and 
-point your local Grafana to that node. An example command to do something
-like that would be:
+local machine to a KalDB query node running in a cloud environment. Below is
+an example command to do that (NOTE: this may or may not work depending on 
+your setup):
 ```
 ssh -N -L $LOCALHOST_PORT:localhost:$REMOTE_PORT $NODE_NAME
 ```
 
 You would then be able to use `host.docker.internal:$LOCALHOST_PORT` as the 
-URL inside your Grafana instance.
+KalDB datasource URL inside your Grafana instance.
 
 
 ### Backend
