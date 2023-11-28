@@ -444,6 +444,117 @@ export class QueryBuilder {
     // todo - use the limit variable to allow users to set this
     query = this.documentQuery(query, size || 500);
 
+    // If there are no bucket aggs to do here, then we don't need to do anything
+    // else
+    if (target.bucketAggs.length === 0) {
+      return {
+        ...query,
+      }
+
+    }
+
+    let i, j, pv, nestedAggs;
+
+    nestedAggs = query;
+
+
+    for (i = 0; i < target.bucketAggs.length; i++) {
+      const aggDef = target.bucketAggs[i];
+      const esAgg: any = {};
+
+      switch (aggDef.type) {
+        case 'date_histogram': {
+          esAgg['date_histogram'] = this.getDateHistogramAgg(aggDef);
+          break;
+        }
+        case 'histogram': {
+          esAgg['histogram'] = this.getHistogramAgg(aggDef);
+          break;
+        }
+        case 'filters': {
+          esAgg['filters'] = { filters: this.getFiltersAgg(aggDef) };
+          break;
+        }
+        case 'terms': {
+          this.buildTermsAgg(aggDef, esAgg, target);
+          break;
+        }
+        case 'geohash_grid': {
+          esAgg['geohash_grid'] = {
+            field: aggDef.field,
+            precision: aggDef.settings?.precision,
+          };
+          break;
+        }
+      }
+
+      nestedAggs.aggs = nestedAggs.aggs || {};
+      nestedAggs.aggs[aggDef.id] = esAgg;
+      nestedAggs = esAgg;
+    }
+
+    nestedAggs.aggs = {};
+
+    for (i = 0; i < target.metrics.length; i++) {
+      metric = target.metrics[i];
+      if (metric.type === 'count' || metric.type === "logs") {
+        continue;
+      }
+
+      const aggField: any = {};
+      let metricAgg: any = null;
+
+      if (isPipelineAggregation(metric)) {
+        if (isPipelineAggregationWithMultipleBucketPaths(metric)) {
+          if (metric.pipelineVariables) {
+            metricAgg = {
+              buckets_path: {},
+            };
+
+            for (j = 0; j < metric.pipelineVariables.length; j++) {
+              pv = metric.pipelineVariables[j];
+
+              if (pv.name && pv.pipelineAgg && /^\d*$/.test(pv.pipelineAgg)) {
+                const appliedAgg = findMetricById(target.metrics, pv.pipelineAgg);
+                if (appliedAgg) {
+                  if (appliedAgg.type === 'count') {
+                    metricAgg.buckets_path[pv.name] = '_count';
+                  } else {
+                    metricAgg.buckets_path[pv.name] = pv.pipelineAgg;
+                  }
+                }
+              }
+            }
+          } else {
+            continue;
+          }
+        } else {
+          if (metric.field && /^\d*$/.test(metric.field)) {
+            const appliedAgg = findMetricById(target.metrics, metric.field);
+            if (appliedAgg) {
+              if (appliedAgg.type === 'count') {
+                metricAgg = { buckets_path: '_count' };
+              } else {
+                metricAgg = { buckets_path: metric.field };
+              }
+            }
+          } else {
+            continue;
+          }
+        }
+      } else if (isMetricAggregationWithField(metric)) {
+        metricAgg = { field: metric.field };
+      }
+
+      metricAgg = {
+        ...metricAgg,
+        ...(isMetricAggregationWithSettings(metric) && metric.settings),
+      };
+
+      aggField[metric.type] = metricAgg;
+      nestedAggs.aggs[metric.id] = aggField;
+    }
+
     return {
       ...query
     };
