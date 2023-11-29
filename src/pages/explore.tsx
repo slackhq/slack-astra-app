@@ -134,12 +134,11 @@ class ResultStats extends SceneObjectBase<ResultsStatsState> {
 
 interface KaldbQueryState extends SceneObjectState {
   query: string;
-  timeseriesLoading: boolean;
-  logsLoading: boolean;
+  loading: boolean;
 }
 
 const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
-  const { timeseriesLoading, logsLoading } = model.useState();
+  const { loading } = model.useState();
 
   return (
     <>
@@ -155,12 +154,11 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
           onChange={(e) => model.onTextChange(e.currentTarget.value)}
         />
       </InlineField>
-      {timeseriesLoading || logsLoading ? (
+      {loading ? (
         <Button
           icon="fa fa-spinner"
           onClick={() => {
-            logsQueryRunner.cancelQuery();
-            histogramQueryRunner.cancelQuery();
+            queryRunner.cancelQuery();
           }}
           variant="destructive"
         >
@@ -431,8 +429,7 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
   constructor(state?: Partial<KaldbQueryState>) {
     super({
       query: '',
-      timeseriesLoading: false,
-      logsLoading: false,
+      loading: false,
       ...state,
     });
   }
@@ -481,17 +478,12 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
     this.doQuery();
   };
 
-  setLogsLoading = (loading: boolean) => {
+  setLoading = (loading: boolean) => {
     this.setState({
-      logsLoading: loading,
+      loading: loading,
     });
   };
 
-  setTimeseriesLoading = (loading: boolean) => {
-    this.setState({
-      timeseriesLoading: loading,
-    });
-  };
 }
 
 const histogramNodeStats = new NodeStats();
@@ -603,46 +595,6 @@ const logsPanel = PanelBuilders.logs()
     })
   )
   .setTitle('Logs');
-
-const logsQueryRunner = new SceneQueryRunner({
-  datasource: {
-    uid: '${datasource}',
-  },
-  queries: [
-    {
-      refId: 'A',
-      query: '${query:raw}',
-      queryType: 'lucene',
-      metrics: [
-        {
-          id: '1',
-          type: 'logs',
-        },
-      ],
-      bucketAggs: [],
-      // todo - this should use the config value for timestamp
-      timeField: '_timesinceepoch',
-    },
-  ],
-});
-
-logsQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
-  if (typeof event.payload.newState !== 'undefined') {
-    if (event.payload.newState['data'].state === 'Done') {
-      queryComponent.setLogsLoading(false);
-      fieldComponent.setLoading(false);
-    } else if (event.payload.newState['data'].state === 'Loading') {
-      queryComponent.setLogsLoading(true);
-      fieldComponent.setLoading(true);
-    } else if (event.payload.newState['data'].state === 'Error') {
-      queryComponent.setLogsLoading(false);
-      logsNodeStats.setCount(-1, -1);
-      fieldComponent.setFields([]);
-      fieldComponent.setTopTenMostPopularFields([]);
-      fieldComponent.setLoading(false);
-    }
-  }
-});
 
 /*
  * Calculates the frequency map for a list of values.
@@ -764,29 +716,7 @@ const logsResultTransformation: CustomTransformOperator = () => (source: Observa
   );
 };
 
-logsPanel.setData(
-  new SceneDataTransformer({
-    $data: logsQueryRunner,
-    transformations: [
-      logsResultTransformation,
-      {
-        id: 'organize',
-        options: {
-          excludeByName: {},
-          indexByName: {
-            // todo - this should use the config value for timestamp
-            _timesinceepoch: 0,
-            // todo - this should use the config value "message field name"
-            _source: 1,
-          },
-          renameByName: {},
-        },
-      },
-    ],
-  })
-);
-
-const histogramQueryRunner = new SceneQueryRunner({
+const queryRunner = new SceneQueryRunner({
   datasource: {
     uid: '${datasource}',
   },
@@ -798,7 +728,7 @@ const histogramQueryRunner = new SceneQueryRunner({
       metrics: [
         {
           id: '1',
-          type: 'count',
+          type: 'logs',
         },
       ],
       bucketAggs: [
@@ -819,20 +749,48 @@ const histogramQueryRunner = new SceneQueryRunner({
   maxDataPoints: 30,
 });
 
-histogramQueryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
+queryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
   if (typeof event.payload.newState !== 'undefined') {
     if (event.payload.newState['data'].state === 'Done') {
-      queryComponent.setTimeseriesLoading(false);
+      queryComponent.setLoading(false); 
+      fieldComponent.setLoading(false);
     } else if (event.payload.newState['data'].state === 'Loading') {
       resultsCounter.setResults(-1);
-      queryComponent.setTimeseriesLoading(true);
+      queryComponent.setLoading(true); 
+      fieldComponent.setLoading(true);
     } else if (event.payload.newState['data'].state === 'Error') {
-      queryComponent.setTimeseriesLoading(false);
+      queryComponent.setLoading(false); 
+      fieldComponent.setFields([]);
+      fieldComponent.setTopTenMostPopularFields([])
+      fieldComponent.setLoading(false);
+      logsNodeStats.setCount(-1, -1);
       resultsCounter.setResults(-1);
       histogramNodeStats.setCount(-1, -1);
     }
   }
 });
+
+logsPanel.setData(
+  new SceneDataTransformer({
+    $data: queryRunner,
+    transformations: [
+      logsResultTransformation,
+      {
+        id: 'organize',
+        options: {
+          excludeByName: {},
+          indexByName: {
+            // todo - this should use the config value for timestamp
+            _timesinceepoch: 0,
+            // todo - this should use the config value "message field name"
+            _source: 1,
+          },
+          renameByName: {},
+        },
+      },
+    ],
+  })
+);
 
 const histogramPanel = PanelBuilders.timeseries()
   .setCustomFieldConfig('drawStyle', DrawStyle.Bars)
@@ -855,8 +813,8 @@ const histogramResultTransformation: CustomTransformOperator = () => (source: Ob
     map((data: DataFrame[]) => {
       if (data.length > 0 && data[0].meta['shards']) {
         let counter = 0;
-        for (let i = data[0].fields[1].values['buffer'].length - 1; i >= 0; i--) {
-          counter += data[0].fields[1].values['buffer'][i];
+        for (let i = data[1].fields[1].values['buffer'].length - 1; i >= 0; i--) {
+          counter += data[1].fields[1].values['buffer'][i];
         }
         resultsCounter.setResults(counter);
         histogramNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
@@ -868,7 +826,7 @@ const histogramResultTransformation: CustomTransformOperator = () => (source: Ob
 
 histogramPanel.setData(
   new SceneDataTransformer({
-    $data: histogramQueryRunner,
+    $data: queryRunner,
     transformations: [histogramResultTransformation],
   })
 );
