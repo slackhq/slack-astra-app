@@ -40,8 +40,9 @@ export class OpenSearchResponse {
       }
 
       switch (metric.type) {
+        case 'logs':
         case 'count': {
-          newSeries = { datapoints: [], metric: 'count', props, refId: target.refId };
+          newSeries = { datapoints: [], metric: metric.type, props, refId: target.refId };
           for (let i = 0; i < esAgg.buckets.length; i++) {
             const bucket = esAgg.buckets[i];
             const value = bucket.doc_count;
