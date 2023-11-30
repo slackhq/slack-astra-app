@@ -13,10 +13,13 @@ import path from 'path';
 import ReplaceInFileWebpackPlugin from 'replace-in-file-webpack-plugin';
 import { Configuration } from 'webpack';
 
+
 import { getPackageJson, getPluginJson, hasReadme, getEntries } from './utils';
 import { SOURCE_DIR, DIST_DIR } from './constants';
 
 const pluginJson = getPluginJson();
+const TerserPlugin = require("terser-webpack-plugin");
+
 
 const config = async (env): Promise<Configuration> => ({
   cache: {
@@ -196,6 +199,17 @@ const config = async (env): Promise<Configuration> => ({
     modules: [path.resolve(process.cwd(), 'src'), 'node_modules'],
     unsafeCache: true,
   },
+
+  optimization: {
+    minimize: true,
+    usedExports: true,
+    minimizer: [new TerserPlugin({
+      terserOptions: {
+        sourceMap: true,
+        compress: true
+      }
+    })]
+  }
 });
 
 export default config;

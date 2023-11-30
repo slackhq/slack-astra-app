@@ -39,8 +39,9 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { VariableHide } from '@grafana/schema';
-import { Field, ValueFrequency } from 'datasource/types';
-import { FieldValueFrequency } from '../datasource/components/FieldValueFrequency';
+import { Field } from 'datasource/types';
+import FieldValueFrequency from '../datasource/components/FieldValueFrequency';
+import { FixedSizeList as List } from 'react-window'
 
 /**
  * The main explore component for KalDB, using the new Grafana scenes implementation.
@@ -246,12 +247,43 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
     return 'Unknown field';
   };
 
+  const ListItem = ({ index,  data }) => {
+    const field = data[index];
+
+    return (<div key={index} style={{
+      cursor: 'pointer'
+    }}>
+      <FieldValueFrequency
+        field={field}
+        onPlusClick={(field: Field, value: string) => queryComponent.appendToQuery(`${field.name}: ${value}`)}
+        onMinusClick={(field: Field, value: string) =>
+          queryComponent.appendToQuery(`NOT ${field.name}: ${value}`)
+        }
+      >
+        <div>
+          <HorizontalGroup>
+            <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
+            <span
+              style={{
+                paddingTop: '10px',
+                fontFamily: 'monospace',
+              }}
+            >
+              {field.name}
+            </span>
+          </HorizontalGroup>
+        </div>
+      </FieldValueFrequency>
+    </div>);
+  }
+
 
   return (
     <div>
       <div
         style={{
           backgroundColor: useTheme2().isDark ? '#343741' : '#e6f1fa',
+          paddingLeft:'15px',
         }}
       >
         <span
@@ -262,84 +294,39 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
         >
           Popular
         </span>
-        <ul
-          className="fa-ul"
+        <List
+          height={30*topTenMostPopularFields.length}
+          width={"100%"}
+          itemCount={topTenMostPopularFields.length}
+          itemData={topTenMostPopularFields}
+          itemSize={30}
           style={{
-            maxWidth: '250px',
+            overflow: 'hidden',
+            maxWidth: '250px'
           }}
         >
-          {topTenMostPopularFields.map((field) => (
-            <div key={field.name}>
-              <li
-                style={{
-                  maxWidth: '200px',
-                  cursor: 'pointer',
-                }}
-              >
-                <FieldValueFrequency
-                  field={field}
-                  onPlusClick={(field: Field, value: string) => queryComponent.appendToQuery(`${field.name}: ${value}`)}
-                  onMinusClick={(field: Field, value: string) =>
-                    queryComponent.appendToQuery(`NOT ${field.name}: ${value}`)
-                  }
-                >
-                  <div>
-                    <HorizontalGroup>
-                      <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
-                      <span
-                        style={{
-                          paddingTop: '10px',
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        {field.name}
-                      </span>
-                    </HorizontalGroup>
-                  </div>
-                </FieldValueFrequency>
-              </li>
-            </div>
-          ))}
-        </ul>
+          {ListItem}
+        </List>
       </div>
-      <ul
-        className="fa-ul"
+      <div
         style={{
-          maxWidth: '250px',
+          paddingLeft:'15px',
         }}
       >
-        {fields.map((field) => (
-          <div key={field.name}>
-            <li
-              style={{
-                cursor: 'pointer',
-              }}
-            >
-              <FieldValueFrequency
-                field={field}
-                onPlusClick={(field: Field, value: string) => queryComponent.appendToQuery(`${field.name}: ${value}`)}
-                onMinusClick={(field: Field, value: string) =>
-                  queryComponent.appendToQuery(`NOT ${field.name}: ${value}`)
-                }
-              >
-                <div>
-                  <HorizontalGroup>
-                    <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
-                    <span
-                      style={{
-                        paddingTop: '10px',
-                        fontFamily: 'monospace',
-                      }}
-                    >
-                      {field.name}
-                    </span>
-                  </HorizontalGroup>
-                </div>
-              </FieldValueFrequency>
-            </li>
-          </div>
-        ))}
-      </ul>
+        <List
+          height={33*fields.length}
+          width={"100%"}
+          itemCount={fields.length}
+          itemData={fields}
+          itemSize={30}
+          style={{
+            overflow: 'hidden',
+            maxWidth: '250px'
+          }}
+        >
+          {ListItem}
+        </List>
+        </div>
     </div>
   );
 };
@@ -596,24 +583,6 @@ const logsPanel = PanelBuilders.logs()
   )
   .setTitle('Logs');
 
-/*
- * Calculates the frequency map for a list of values.
- * The map returned is in sorted descending order
- */
-function getFrequencyMap<T>(values: T[]): Map<string, number> {
-  let frequencyMap = new Map<string, number>();
-  for (let value of values) {
-    if (value === undefined) {
-      continue;
-    }
-
-    let stringValue = JSON.stringify(value);
-
-    let currentCount = frequencyMap.has(stringValue) ? frequencyMap.get(stringValue) : 0;
-    frequencyMap.set(stringValue, currentCount + 1);
-  }
-  return new Map([...frequencyMap].sort((a, b) => (a[1] >= b[1] ? -1 : 0)));
-}
 
 /**
  * This custom transform operation is used to rewrite the _source field to an ansi log line, as
@@ -634,30 +603,13 @@ const logsResultTransformation: CustomTransformOperator = () => (source: Observa
         let mappedFields: Map<string, Field> = new Map<string, Field>();
         data[0].fields.map((unmappedField) => {
           let unmappedFieldValuesArray = unmappedField.values.toArray();
-          let frequencyMapForField = getFrequencyMap(unmappedFieldValuesArray);
-          let topFiveMostPopularValues: ValueFrequency[] = [];
-          let i = 0;
-          for (let [value, _count] of frequencyMapForField) {
-            if (i === 5) {
-              break;
-            }
-            let definedCount = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
-            let valueFreq: ValueFrequency = {
-              value: value,
-              frequency: _count / definedCount,
-            };
-            topFiveMostPopularValues.push(valueFreq);
-            i++;
-          }
-
           let logsWithDefinedValue = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
 
           let mapped_field: Field = {
             name: unmappedField.name,
             type: unmappedField.type.toString(),
-            mostCommonValues: topFiveMostPopularValues,
             numberOfLogsFieldIsIn: logsWithDefinedValue,
-            totalNumberOfLogs: unmappedField.values.length,
+            unmappedFieldValuesArray: unmappedFieldValuesArray
           };
 
           fieldCounts.set(unmappedField.name, logsWithDefinedValue);
