@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0
+### New features
+* Improved the performance of the application by combining two network requests into one
+* Improved the performance of the application through various optimizations that _should_
+result in an average load time speed up of ~50%
+
+### Breaking changes
+N/A
+
+### Bugs squashed
+* Fixed the background color for the most popular fields list not being correct in dark mode 
+
+
 ## 0.3.0
 ### New features
 * Added a sidebar that displays all the detected fields in the logs returned
