@@ -103,7 +103,6 @@ export interface ValueFrequency {
 export interface Field {
   name: string;
   type: string;
-  mostCommonValues: ValueFrequency[];
   numberOfLogsFieldIsIn: number;
-  totalNumberOfLogs: number;
+  unmappedFieldValuesArray: any[];
 }

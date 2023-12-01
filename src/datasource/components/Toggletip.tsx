@@ -183,7 +183,7 @@ export interface ToggletipContentProps {
   update?: () => void;
 }
 
-export type ToggletipContent = string | React.ReactElement | ((props: ToggletipContentProps) => JSX.Element);
+export type ToggletipContent = string | React.ReactElement | (() => React.ReactElement);
 
 export interface ToggletipProps {
   /** The theme used to display the toggletip */
@@ -243,7 +243,7 @@ export const Toggletip = React.memo(
       return undefined;
     }, [controlledVisible, closeToggletip]);
 
-    const { getArrowProps, getTooltipProps, setTooltipRef, setTriggerRef, visible, update } = usePopperTooltip({
+    const { getArrowProps, getTooltipProps, setTooltipRef, setTriggerRef, visible } = usePopperTooltip({
       visible: controlledVisible,
       placement: placement,
       interactive: true,
@@ -256,6 +256,7 @@ export const Toggletip = React.memo(
         }
       },
     });
+
 
     return (
       <>
@@ -283,8 +284,7 @@ export const Toggletip = React.memo(
               )}
               <div ref={contentRef} {...getArrowProps({ className: style.arrow })} />
               <div className={style.body}>
-                {(typeof content === 'string' || React.isValidElement(content)) && content}
-                {typeof content === 'function' && update && content({ update })}
+                {(typeof content === 'function' && React.isValidElement(content())) && content()}
               </div>
               {Boolean(footer) && <div className={style.footer}>{footer}</div>}
             </div>

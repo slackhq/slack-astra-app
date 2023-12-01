@@ -1,5 +1,5 @@
 import React from 'react';
-import { Field } from 'datasource/types';
+import { Field, ValueFrequency } from 'datasource/types';
 import { Toggletip } from './Toggletip';
 import { HorizontalGroup, VerticalGroup, Button } from '@grafana/ui';
 
@@ -8,6 +8,45 @@ interface Props {
   children: JSX.Element;
   onPlusClick?: (field: Field, value: string) => void;
   onMinusClick?: (field: Field, value: string) => void;
+}
+
+
+/*
+ * Calculates the frequency map for a list of values.
+ * The map returned is in sorted descending order
+ */
+function getFrequencyMap<T>(values: T[]): Map<string, number> {
+  let frequencyMap = new Map<string, number>();
+  for (let value of values) {
+    if (value === undefined) {
+      continue;
+    }
+
+    let stringValue = JSON.stringify(value);
+
+    let currentCount = frequencyMap.has(stringValue) ? frequencyMap.get(stringValue) : 0;
+    frequencyMap.set(stringValue, currentCount + 1);
+  }
+  return new Map([...frequencyMap].sort((a, b) => (a[1] >= b[1] ? -1 : 0)));
+}
+
+function getValueCountsForField(unmappedFieldValuesArray: any): ValueFrequency[] {
+  let frequencyMapForField = getFrequencyMap(unmappedFieldValuesArray);
+  let topFiveMostPopularValues: ValueFrequency[] = [];
+  let i = 0;
+  for (let [value, _count] of frequencyMapForField) {
+    if (i === 5) {
+      break;
+    }
+    let definedCount = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
+    let valueFreq: ValueFrequency = {
+      value: value,
+      frequency: _count / definedCount,
+    };
+    topFiveMostPopularValues.push(valueFreq);
+    i++;
+  }
+  return topFiveMostPopularValues;
 }
 
 const InnerTitle = (field: Field) => {
@@ -31,14 +70,15 @@ const InnerContent = (
   onPlusClick?: (field: Field, value: string) => void,
   onMinusClick?: (field: Field, value: string) => void
 ) => {
+  let mostCommonValues = getValueCountsForField(field.unmappedFieldValuesArray)
   return (
     <div>
       <span>
         <b>
-          Top {field.mostCommonValues.length} {field.mostCommonValues.length > 1 ? 'values' : 'value'}
+          Top {mostCommonValues.length} {mostCommonValues.length > 1 ? 'values' : 'value'}
         </b>
       </span>
-      {field.mostCommonValues.map((valueFreq) => {
+      {mostCommonValues.map((valueFreq) => {
         return (
           <VerticalGroup key={valueFreq.value}>
             <HorizontalGroup spacing={'lg'} justify={'space-between'}>
@@ -84,7 +124,7 @@ const InnerContent = (
 const InnerFooter = (field: Field) => {
   return (
     <span>
-      Exists in {field.numberOfLogsFieldIsIn} / {field.totalNumberOfLogs} records
+      Exists in {field.numberOfLogsFieldIsIn} / {field.unmappedFieldValuesArray.values.length} records
     </span>
   );
 };
@@ -92,7 +132,7 @@ const InnerFooter = (field: Field) => {
 /**
  * A component to show the FieldValueFrequency for a given field value in the app UI.
  */
-export const FieldValueFrequency = ({ field, children, onMinusClick, onPlusClick }: Props) => {
+const FieldValueFrequency = ({ field, children, onMinusClick, onPlusClick }: Props) => {
   // This doesn't make sense for this field
   if (field.name === '_source') {
     return <div></div>;
@@ -101,7 +141,7 @@ export const FieldValueFrequency = ({ field, children, onMinusClick, onPlusClick
   return (
     <Toggletip
       title={InnerTitle(field)}
-      content={InnerContent(field, onPlusClick, onMinusClick)}
+      content={() => InnerContent(field, onPlusClick, onMinusClick)}
       footer={InnerFooter(field)}
       closeButton={false}
       placement={'right'}
@@ -110,3 +150,5 @@ export const FieldValueFrequency = ({ field, children, onMinusClick, onPlusClick
     </Toggletip>
   );
 };
+
+export default FieldValueFrequency;

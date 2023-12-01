@@ -20,3 +20,4 @@ services:
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
       GF_PATHS_PLUGINS: "/var/lib/grafana/plugins"
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "slack-kaldb-app,slack-kaldb-app-backend-datasource"
+      GF_SERVER_ENABLE_GZIP: "true"
