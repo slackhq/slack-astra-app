@@ -106,3 +106,5 @@ export interface Field {
   numberOfLogsFieldIsIn: number;
   unmappedFieldValuesArray: any[];
 }
+
+export type Log = Map<string, any>;
