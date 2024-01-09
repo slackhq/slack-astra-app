@@ -2,7 +2,7 @@ import React from 'react'
 import { Log } from 'datasource/types'
 import { LogColumnType, LogColumn } from 'datasource/components/Logs/types'
 import  getLogTableContext from 'datasource/components/Logs/context'
-import { Button } from '@grafana/ui'
+import { Button, useTheme2 } from '@grafana/ui'
 
 
 interface LogKeyValProps {
@@ -13,7 +13,7 @@ interface LogKeyValProps {
 
 const LogKeyVal = ({ field, val }: LogKeyValProps) => {
     return (<div style={{display:'inline-block', paddingRight: '10px'}}>
-        <div style={{backgroundColor: 'grey', display: 'inline', borderRadius: '6px', marginRight: '3px', padding: '2px 4px'}}>
+        <div style={{backgroundColor: useTheme2().isDark ? '#343741' : '#e6f1fa', display: 'inline', borderRadius: '6px', marginRight: '3px', padding: '2px 4px'}}>
             {field + ":"}
 
         </div>
@@ -116,7 +116,7 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, }: Expan
             </table>
             {
                 // TODO: Should this value be configurable?
-                log.has('trace_id') ? 
+                log.has('trace_id') && datasourceName && datasourceUid ? 
                 (
                         <a href={formattedLink}>
                             <Button
@@ -275,13 +275,15 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
 
     // Handle drawing the borders for the entire row
     if (columnIndex === 0) {
-        style['borderLeft'] = '1px solid rgb(71, 71, 71)'
+        style['borderLeft'] = useTheme2().isDark ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
     }
-    style['borderTop'] = '1px solid rgb(71, 71, 71)'
-    style['borderBottom'] = '1px solid rgb(71, 71, 71)'
+    if (rowIndex == 0) {
+        style['borderTop'] =  useTheme2().isDark ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+    }
+    style['borderBottom'] =  useTheme2().isDark ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
 
     if (columnIndex === data.columns.length - 1) {
-      style['borderRight'] = '1px solid rgb(71, 71, 71)'
+      style['borderRight'] = useTheme2().isDark ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
     }
 
     // Header row

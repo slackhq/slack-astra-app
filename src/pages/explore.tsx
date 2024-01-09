@@ -428,12 +428,18 @@ const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
     ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
     .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
 
-  const tracesDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
-  const tracesDatasource = dataSourceVariable
-    ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
-    .filter((ele) => ele.uid === tracesDatasourceUid)[0];
+  let tracesDatasourceUid = '';
+  let tracesDatasource = null;
+  let tracesDatasourceName = ''; 
 
-  const tracesDatasourceName = tracesDatasource.name;
+  if (currentDataSource.jsonData.dataLinks?.length > 0) {
+    tracesDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
+    tracesDatasource = dataSourceVariable
+      ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
+      .filter((ele) => ele.uid === tracesDatasourceUid)[0];
+
+    tracesDatasourceName = tracesDatasource.name;
+  }
 
   return (
     <>
