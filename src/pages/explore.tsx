@@ -432,7 +432,7 @@ const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
   let tracesDatasource = null;
   let tracesDatasourceName = ''; 
 
-  if (currentDataSource.jsonData.dataLinks?.length > 0) {
+  if (currentDataSource && currentDataSource.jsonData.dataLinks?.length > 0) {
     tracesDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
     tracesDatasource = dataSourceVariable
       ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript

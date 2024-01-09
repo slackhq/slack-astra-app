@@ -3,6 +3,8 @@ import { Log } from 'datasource/types'
 import { LogColumnType, LogColumn } from 'datasource/components/Logs/types'
 import  getLogTableContext from 'datasource/components/Logs/context'
 import { Button, useTheme2 } from '@grafana/ui'
+import { getTimeZone } from '@grafana/data'
+import { DateTime } from 'luxon'
 
 
 interface LogKeyValProps {
@@ -180,6 +182,17 @@ const TimestampCell = (timestamp: number, style: any, rowIndex: number, expanded
         return 'angle-right';
     };
 
+    const userTimezone = getTimeZone();
+    let formattedTime: string | null = null;
+    if (timestamp) {
+        let datetime = DateTime.fromMillis(timestamp);
+        if (userTimezone !== 'browser') {
+            datetime = datetime.setZone(userTimezone);
+        }
+        formattedTime = datetime.toISO();
+    }
+
+
     return (
         <div style={
             {
@@ -205,7 +218,7 @@ const TimestampCell = (timestamp: number, style: any, rowIndex: number, expanded
                 />
             </div>
             <div>
-                {timestamp === undefined ? '' : new Date(timestamp).toISOString()}
+                {formattedTime}
             </div>
         </div>
     );
@@ -261,6 +274,7 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     const datasourceUid = data.datasourceUid
     const datasourceName = data.datasourceName
     const { setSize } = getLogTableContext();
+    const darkModeEnabled = useTheme2().isDark ;
 
 
     // TODO: Ignoring for now as these will be used in a future pass
@@ -274,17 +288,24 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     }
 
     // Handle drawing the borders for the entire row
+    // Only draw a borderon the left if we're on the left-most cell
     if (columnIndex === 0) {
-        style['borderLeft'] = useTheme2().isDark ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+        style['borderLeft'] = darkModeEnabled ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
     }
-    if (rowIndex == 0) {
-        style['borderTop'] =  useTheme2().isDark ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
-    }
-    style['borderBottom'] =  useTheme2().isDark ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
 
-    if (columnIndex === data.columns.length - 1) {
-      style['borderRight'] = useTheme2().isDark ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+    // Only draw a border on the top if we're on the top-most cell
+    if (rowIndex === 0) {
+        style['borderTop'] =  darkModeEnabled ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
     }
+
+    // Only draw a border on the right if we're on the right-most cell
+    if (columnIndex === data.columns.length - 1) {
+      style['borderRight'] = darkModeEnabled ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+    }
+
+    style['borderBottom'] =  darkModeEnabled ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+
+
 
     // Header row
     if (rowIndex === 0) {
