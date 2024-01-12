@@ -43,6 +43,7 @@ import { Field, Log } from 'datasource/types';
 import FieldValueFrequency from '../datasource/components/FieldValueFrequency';
 import LogsView from 'datasource/components/Logs/LogsView';
 import { FixedSizeList as List } from 'react-window'
+import { DARK_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_HIGHLIGHTED_BACKGROUND } from 'datasource/components/Logs/styles';
 
 /**
  * The main explore component for KalDB, using the new Grafana scenes implementation.
@@ -291,7 +292,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
     <div>
       <div
         style={{
-          backgroundColor: useTheme2().isDark ? '#343741' : '#e6f1fa',
+          backgroundColor: useTheme2().isDark ? DARK_THEME_HIGHLIGHTED_BACKGROUND : LIGHT_THEME_HIGHLIGHTED_BACKGROUND,
           paddingLeft:'15px',
         }}
       >
@@ -428,17 +429,22 @@ const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
     ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
     .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
 
-  let tracesDatasourceUid = '';
-  let tracesDatasource = null;
-  let tracesDatasourceName = ''; 
+  let linkedDatasourceUid = '';
+  let linkedDatasource = null;
+  let linkedDatasourceName = ''; 
+  let linkedDatasourceField = '';
 
   if (currentDataSource && currentDataSource.jsonData.dataLinks?.length > 0) {
-    tracesDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
-    tracesDatasource = dataSourceVariable
+    linkedDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
+    linkedDatasourceField = currentDataSource.jsonData.dataLinks[0].field;
+    linkedDatasource = dataSourceVariable
       ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
-      .filter((ele) => ele.uid === tracesDatasourceUid)[0];
+      .filter((ele) => ele.uid === linkedDatasourceUid)[0];
 
-    tracesDatasourceName = tracesDatasource.name;
+    // linkedDatasource will be undefined for external links 
+    if (linkedDatasource) {
+      linkedDatasourceName = linkedDatasource.name;
+    }
   }
 
   return (
@@ -451,8 +457,9 @@ const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
               logs={logs}
               timeField={timeField}
               timestamps={timestamps}
-              datasourceUid={tracesDatasourceUid}
-              datasourceName={tracesDatasourceName}
+              datasourceUid={linkedDatasourceUid}
+              datasourceName={linkedDatasourceName}
+              datasourceField={linkedDatasourceField}
             />
         </div>
       )}

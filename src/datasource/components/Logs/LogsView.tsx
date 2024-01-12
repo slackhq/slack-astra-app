@@ -10,9 +10,10 @@ interface LogsViewProps {
     timestamps: number[];
     datasourceUid: string;
     datasourceName: string;
+    datasourceField: string;
 }
 
-const LogsView = ({ logs, timeField, timestamps, datasourceUid, datasourceName }: LogsViewProps) => {
+const LogsView = ({ logs, timeField, timestamps, datasourceUid, datasourceName, datasourceField }: LogsViewProps) => {
     const [columns, setColumns] = React.useState<LogColumn[]>([
         {
             logColumnType: LogColumnType.TIME,
@@ -44,6 +45,7 @@ const LogsView = ({ logs, timeField, timestamps, datasourceUid, datasourceName }
             setColumns={setColumns}
             datasourceUid={datasourceUid}
             datasourceName={datasourceName}
+            datasourceField={datasourceField}
         />
     )
 

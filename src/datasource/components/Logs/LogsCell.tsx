@@ -3,8 +3,8 @@ import { Log } from 'datasource/types'
 import { LogColumnType, LogColumn } from 'datasource/components/Logs/types'
 import  getLogTableContext from 'datasource/components/Logs/context'
 import { Button, useTheme2 } from '@grafana/ui'
-import { getTimeZone } from '@grafana/data'
-import { DateTime } from 'luxon'
+import { dateTimeParse, getTimeZone } from '@grafana/data'
+import { DARK_THEME_HIGHLIGHTED_BACKGROUND, DARK_THEME_OUTLINE, LIGHT_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_OUTLINE } from './styles'
 
 
 interface LogKeyValProps {
@@ -15,7 +15,14 @@ interface LogKeyValProps {
 
 const LogKeyVal = ({ field, val }: LogKeyValProps) => {
     return (<div style={{display:'inline-block', paddingRight: '10px'}}>
-        <div style={{backgroundColor: useTheme2().isDark ? '#343741' : '#e6f1fa', display: 'inline', borderRadius: '6px', marginRight: '3px', padding: '2px 4px'}}>
+        <div 
+            style={{
+                backgroundColor: useTheme2().isDark ? DARK_THEME_HIGHLIGHTED_BACKGROUND : LIGHT_THEME_HIGHLIGHTED_BACKGROUND, 
+                display: 'inline', 
+                borderRadius: '6px', 
+                marginRight: '3px', 
+                padding: '2px 4px'
+            }}>
             {field + ":"}
 
         </div>
@@ -48,11 +55,12 @@ interface ExpandedDocumentProps {
     log: Log,
     index: number,
     datasourceUid: string,
-    datasourceName: string
+    datasourceName: string,
+    datasourceField: string,
 }
 
 
-const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, }: ExpandedDocumentProps) => {
+const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasourceField }: ExpandedDocumentProps) => {
     const { setSize, windowWidth } = getLogTableContext();
     const root = React.useRef<HTMLDivElement>();
     React.useEffect(() => {
@@ -64,7 +72,7 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, }: Expan
     const link = {
         datasource: datasourceUid,
         queries: [{
-            query: log.get("trace_id"), // TODO: This should be user configurable
+            query: log.get(datasourceField), 
             refId: "A",
         }],
         range:{
@@ -117,8 +125,7 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, }: Expan
                 }
             </table>
             {
-                // TODO: Should this value be configurable?
-                log.has('trace_id') && datasourceName && datasourceUid ? 
+                log.has(datasourceField) && datasourceName && datasourceUid ? 
                 (
                         <a href={formattedLink}>
                             <Button
@@ -137,7 +144,7 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, }: Expan
 }
 
 
-const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean, datasourceUid: string, datasourceName: string) => (
+const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean, datasourceUid: string, datasourceName: string, datasourceField: string) => (
     <div
         style={{
                 display: 'inline-block',
@@ -167,6 +174,7 @@ const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean,
                     index={rowIndex}
                     datasourceUid={datasourceUid}
                     datasourceName={datasourceName}
+                    datasourceField={datasourceField}
                 />)
                       
             : ''
@@ -181,17 +189,6 @@ const TimestampCell = (timestamp: number, style: any, rowIndex: number, expanded
         }
         return 'angle-right';
     };
-
-    const userTimezone = getTimeZone();
-    let formattedTime: string | null = null;
-    if (timestamp) {
-        let datetime = DateTime.fromMillis(timestamp);
-        if (userTimezone !== 'browser') {
-            datetime = datetime.setZone(userTimezone);
-        }
-        formattedTime = datetime.toISO();
-    }
-
 
     return (
         <div style={
@@ -217,9 +214,9 @@ const TimestampCell = (timestamp: number, style: any, rowIndex: number, expanded
                     onClick={() => onClick(rowIndex)}
                 />
             </div>
-            <div>
-                {formattedTime}
-            </div>
+            <>
+                {dateTimeParse(timestamp, {timeZone: getTimeZone()}).format("YYYY-MM-DD @ HH:mm:ss:SSS Z").toString()}
+            </>
         </div>
     );
 }
@@ -269,10 +266,11 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     const log = data.logs[rowIndex];
     const timestamp = data.timestamps[rowIndex];
     const column = data.columns[columnIndex];
-    const setExpandedRowsAndReRender = data.setExpandedRowsAndReRender
-    const expandedRows = data.expandedRows
-    const datasourceUid = data.datasourceUid
-    const datasourceName = data.datasourceName
+    const setExpandedRowsAndReRender = data.setExpandedRowsAndReRender;
+    const expandedRows = data.expandedRows;
+    const datasourceUid: string = data.datasourceUid;
+    const datasourceName: string = data.datasourceName;
+    const datasourceField: string = data.datasourceField;
     const { setSize } = getLogTableContext();
     const darkModeEnabled = useTheme2().isDark ;
 
@@ -287,23 +285,25 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
         setExpandedRowsAndReRender([...newExpandedRows], rowIndex);
     }
 
+    const outline = darkModeEnabled ? DARK_THEME_OUTLINE : LIGHT_THEME_OUTLINE;
+
     // Handle drawing the borders for the entire row
     // Only draw a borderon the left if we're on the left-most cell
     if (columnIndex === 0) {
-        style['borderLeft'] = darkModeEnabled ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+        style['borderLeft'] = outline;
     }
 
     // Only draw a border on the top if we're on the top-most cell
     if (rowIndex === 0) {
-        style['borderTop'] =  darkModeEnabled ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+        style['borderTop'] =  outline;
     }
 
     // Only draw a border on the right if we're on the right-most cell
     if (columnIndex === data.columns.length - 1) {
-      style['borderRight'] = darkModeEnabled ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+      style['borderRight'] = outline;
     }
 
-    style['borderBottom'] =  darkModeEnabled ? '1px solid rgb(71, 71, 71)' : '1px solid rgba(36, 41, 46, 0.3)';
+    style['borderBottom'] =  outline;
 
 
 
@@ -316,7 +316,7 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     if (column.logColumnType === LogColumnType.TIME) {
         return TimestampCell(timestamp, style, rowIndex, expandedRows, handleOnClick);
     } else if (column.logColumnType === LogColumnType.DOCUMENT) {
-        return DocumentCell(log, style, rowIndex, expandedRows[rowIndex], datasourceUid, datasourceName);
+        return DocumentCell(log, style, rowIndex, expandedRows[rowIndex], datasourceUid, datasourceName, datasourceField);
     } else {
         return FieldCell();
     }
