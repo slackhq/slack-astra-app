@@ -22,7 +22,7 @@ import {
   TextBoxVariable,
   VariableValueSelectors,
 } from '@grafana/scenes';
-import { AppRootProps, ArrayVector, DataFrame } from '@grafana/data';
+import { AppRootProps, DataFrame } from '@grafana/data';
 import {
   Button,
   DrawStyle,
@@ -39,9 +39,11 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { VariableHide } from '@grafana/schema';
-import { Field } from 'datasource/types';
+import { Field, Log } from 'datasource/types';
 import FieldValueFrequency from '../datasource/components/FieldValueFrequency';
+import LogsView from 'datasource/components/Logs/LogsView';
 import { FixedSizeList as List } from 'react-window'
+import { DARK_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_HIGHLIGHTED_BACKGROUND } from 'datasource/components/Logs/styles';
 
 /**
  * The main explore component for KalDB, using the new Grafana scenes implementation.
@@ -73,6 +75,14 @@ interface FieldStatsState extends SceneObjectState {
   topTenMostPopularFields: Field[];
   visible: boolean;
   loading: boolean;
+}
+
+interface LogsState extends SceneObjectState {
+  logs: Log[];
+  timestamps: number[];
+  loading: boolean;
+  totalCount: number;
+  totalFailed: number;
 }
 
 const NodeStatsRenderer = ({ model }: SceneComponentProps<NodeStats>) => {
@@ -282,7 +292,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
     <div>
       <div
         style={{
-          backgroundColor: useTheme2().isDark ? '#343741' : '#e6f1fa',
+          backgroundColor: useTheme2().isDark ? DARK_THEME_HIGHLIGHTED_BACKGROUND : LIGHT_THEME_HIGHLIGHTED_BACKGROUND,
           paddingLeft:'15px',
         }}
       >
@@ -295,7 +305,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
           Popular
         </span>
         <List
-          height={30*topTenMostPopularFields.length}
+          height={30*topTenMostPopularFields.length} 
           width={"100%"}
           itemCount={topTenMostPopularFields.length}
           itemData={topTenMostPopularFields}
@@ -314,7 +324,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
         }}
       >
         <List
-          height={33*fields.length}
+          height={33*fields.length} // TODO: This breaks virtualization since we're setting the height to the total. We should set it to a percentage of the screen.
           width={"100%"}
           itemCount={fields.length}
           itemData={fields}
@@ -410,6 +420,100 @@ class FieldStats extends SceneObjectBase<FieldStatsState> {
   };
 }
 
+const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
+  const { logs, loading, timestamps } = model.useState();
+
+  // TODO: This should be whatever the user set
+  const timeField = "_timesinceepoch"
+  const currentDataSource = dataSourceVariable
+    ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
+    .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
+
+  let linkedDatasourceUid = '';
+  let linkedDatasource = null;
+  let linkedDatasourceName = ''; 
+  let linkedDatasourceField = '';
+
+  if (currentDataSource && currentDataSource.jsonData.dataLinks?.length > 0) {
+    linkedDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
+    linkedDatasourceField = currentDataSource.jsonData.dataLinks[0].field;
+    linkedDatasource = dataSourceVariable
+      ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
+      .filter((ele) => ele.uid === linkedDatasourceUid)[0];
+
+    // linkedDatasource will be undefined for external links 
+    if (linkedDatasource) {
+      linkedDatasourceName = linkedDatasource.name;
+    }
+  }
+
+  return (
+    <>
+      {loading ? (
+        <LoadingPlaceholder text={'Loading...'} />
+      ) : (
+        <div style={{height: '100%'}}>
+            <LogsView
+              logs={logs}
+              timeField={timeField}
+              timestamps={timestamps}
+              datasourceUid={linkedDatasourceUid}
+              datasourceName={linkedDatasourceName}
+              datasourceField={linkedDatasourceField}
+            />
+        </div>
+      )}
+    </>
+  );
+}
+
+class KalDBLogs extends SceneObjectBase<LogsState> {
+  static Component = KalDBLogsRenderer;
+  constructor(state?: Partial<LogsState>) {
+    super({
+      logs: [],
+      loading: true,
+      totalCount: 0,
+      totalFailed: 0,
+      timestamps: [],
+      ...state,
+    });
+  }
+
+  setTimestamps = (timestamps: number[]) => {
+    this.setState({
+      timestamps: timestamps,
+    });
+  };
+
+
+  setLogs = (logs: Log[]) => {
+    this.setState({
+      logs: logs,
+    });
+  };
+
+  setTotalCount = (totalCount: number) => {
+    this.setState({
+      totalCount: totalCount,
+    });
+  };
+
+  setTotalFailed = (totalFailed: number) => {
+    this.setState({
+      totalFailed: totalFailed,
+    });
+  };
+
+  setLoading = (loading: boolean) => {
+    this.setState({
+      loading: loading,
+    });
+  };
+}
+
+
+
 class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
   static Component = KaldbQueryRenderer;
 
@@ -474,10 +578,10 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
 }
 
 const histogramNodeStats = new NodeStats();
-const logsNodeStats = new NodeStats();
 const resultsCounter = new ResultStats();
 const queryComponent = new KaldbQuery();
 const fieldComponent = new FieldStats();
+const logsComponent = new KalDBLogs(); 
 
 const getExploreScene = () => {
   return new EmbeddedScene({
@@ -559,7 +663,7 @@ const getExploreScene = () => {
                   new SceneFlexItem({
                     height: '100%',
                     minHeight: 300,
-                    body: logsPanel.build(),
+                    body: logsComponent,
                   }),
                 ],
               }),
@@ -572,101 +676,74 @@ const getExploreScene = () => {
   });
 };
 
-const logsPanel = PanelBuilders.logs()
-  .setOption('showTime', true)
-  .setOption('wrapLogMessage', true)
-  .setHoverHeader(true)
-  .setHeaderActions(
-    new SceneFlexLayout({
-      children: [logsNodeStats],
-    })
-  )
-  .setTitle('Logs');
-
-
 /**
- * This custom transform operation is used to rewrite the _source field to an ansi log line, as
- * well as initialize the meta information used for debugging purposes.
+ * Parse the log data returned from KalDB and extract the relevant information
+ * to our various SceneObject's
  */
-const logsResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
-  return source.pipe(
-    map((data: DataFrame[]) => {
-      // Set log count
-      if (data.length > 0 && data[0].meta['shards']) {
-        logsNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
+const parseAndExtractLogData = (data: DataFrame[]) => {
+  // Set log count
+  if (data.length > 0 && data[0].meta['shards']) {
+    logsComponent.setTotalCount(data[0].meta['shards'].total);
+    logsComponent.setTotalFailed(data[0].meta['shards'].failed);
+  }
+
+  // Set field names, the most popular fields, and calculates the frequency of the most common values
+  if (data.length > 0 && data[0].fields.length > 0) {
+    let fieldCounts: Map<string, number> = new Map<string, number>();
+
+    let mappedFields: Map<string, Field> = new Map<string, Field>();
+    let reconstructedLogs: Log[] = [];
+    let timestamps: number[] = [];
+
+    for (let unmappedField of data[0].fields) {
+      let unmappedFieldValuesArray = unmappedField.values.toArray();
+      let logsWithDefinedValue = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
+
+      // TODO: This should be user configurable
+      if (unmappedField.name === "_timesinceepoch") {
+        timestamps = [ ...unmappedField.values.toArray() ];
+      }
+      if (unmappedField.name === "_source") {
+        reconstructedLogs = unmappedField.values.toArray().map(
+          (value: object) => (
+            new Map(Object.entries(value))
+          ));
       }
 
-      // Set field names, the most popular fields, and calculates the frequency of the most common values
-      if (data.length > 0 && data[0].fields.length > 0) {
-        let fieldCounts: Map<string, number> = new Map<string, number>();
+      let mapped_field: Field = {
+        name: unmappedField.name,
+        type: unmappedField.type.toString(),
+        numberOfLogsFieldIsIn: logsWithDefinedValue,
+        unmappedFieldValuesArray: unmappedFieldValuesArray
+      };
 
-        let mappedFields: Map<string, Field> = new Map<string, Field>();
-        data[0].fields.map((unmappedField) => {
-          let unmappedFieldValuesArray = unmappedField.values.toArray();
-          let logsWithDefinedValue = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
+      fieldCounts.set(unmappedField.name, logsWithDefinedValue);
+      mappedFields.set(unmappedField.name, mapped_field);
+    }
 
-          let mapped_field: Field = {
-            name: unmappedField.name,
-            type: unmappedField.type.toString(),
-            numberOfLogsFieldIsIn: logsWithDefinedValue,
-            unmappedFieldValuesArray: unmappedFieldValuesArray
-          };
+    logsComponent.setLogs(reconstructedLogs);
+    logsComponent.setTimestamps(timestamps);
 
-          fieldCounts.set(unmappedField.name, logsWithDefinedValue);
-          mappedFields.set(unmappedField.name, mapped_field);
-        });
-
-        let sortedFieldCounts: Map<string, number> = new Map([...fieldCounts].sort((a, b) => (a[1] >= b[1] ? -1 : 0)));
-        let topTenMostPopularFields: Field[] = [];
-        let i = 0;
-        for (let [name, _count] of sortedFieldCounts) {
-          if (i === 10) {
-            break;
-          }
-
-          // Add the name to the top ten field and remove it from the mapped fields, which is used to display all the
-          // others. This way we don't double-display
-          topTenMostPopularFields.push(mappedFields.get(name));
-          mappedFields.delete(name);
-          i++;
-        }
-
-        fieldComponent.setFields([...mappedFields.values()]);
-        fieldComponent.setTopTenMostPopularFields(topTenMostPopularFields);
+    let sortedFieldCounts: Map<string, number> = new Map([...fieldCounts].sort((a, b) => (a[1] >= b[1] ? -1 : 0)));
+    let topTenMostPopularFields: Field[] = [];
+    let i = 0;
+    for (let [name, _count] of sortedFieldCounts) {
+      if (i === 10) {
+        break;
       }
 
-      return data.map((frame: DataFrame) => {
-        return {
-          ...frame,
-          fields: frame.fields.map((field) => {
-            // todo - this should use the config value "message field name"
-            if (field.name === '_source') {
-              return {
-                ...field,
-                values: new ArrayVector(
-                  field.values.toArray().map((v) => {
-                    let str = '';
-                    for (const [key, value] of Object.entries(v)) {
-                      // we specifically choose style code "2" here (dim) because it is the only style
-                      // that has custom logic specific to Grafana to allow it to look good in dark and light themes
-                      // https://github.com/grafana/grafana/blob/701c6b6f074d4bc515f0824ed4de1997db035b69/public/app/features/logs/components/LogMessageAnsi.tsx#L19-L24
-                      str = str + key + ': ' + '\u001b[2m' + value + '\u001b[0m' + ' ';
-                    }
-                    return str;
-                  })
-                ),
-              };
-            }
-            return {
-              ...field,
-              keys: ['Line'],
-            };
-          }),
-        };
-      });
-    })
-  );
-};
+      // Add the name to the top ten field and remove it from the mapped fields, which is used to display all the
+      // others. This way we don't double-display
+      topTenMostPopularFields.push(mappedFields.get(name));
+      mappedFields.delete(name);
+      i++;
+    }
+
+    fieldComponent.setFields([...mappedFields.values()]);
+    fieldComponent.setTopTenMostPopularFields(topTenMostPopularFields);
+  }
+  return data;
+}
 
 const queryRunner = new SceneQueryRunner({
   datasource: {
@@ -706,6 +783,8 @@ queryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
     if (event.payload.newState['data'].state === 'Done') {
       queryComponent.setLoading(false); 
       fieldComponent.setLoading(false);
+      logsComponent.setLoading(false);
+      parseAndExtractLogData(event.payload.newState['data'].series);
     } else if (event.payload.newState['data'].state === 'Loading') {
       resultsCounter.setResults(-1);
       queryComponent.setLoading(true); 
@@ -715,34 +794,13 @@ queryRunner.subscribeToEvent(SceneObjectStateChangedEvent, (event) => {
       fieldComponent.setFields([]);
       fieldComponent.setTopTenMostPopularFields([])
       fieldComponent.setLoading(false);
-      logsNodeStats.setCount(-1, -1);
+      logsComponent.setTotalCount(-1);
+      logsComponent.setTotalFailed(-1);
       resultsCounter.setResults(-1);
       histogramNodeStats.setCount(-1, -1);
     }
   }
 });
-
-logsPanel.setData(
-  new SceneDataTransformer({
-    $data: queryRunner,
-    transformations: [
-      logsResultTransformation,
-      {
-        id: 'organize',
-        options: {
-          excludeByName: {},
-          indexByName: {
-            // todo - this should use the config value for timestamp
-            _timesinceepoch: 0,
-            // todo - this should use the config value "message field name"
-            _source: 1,
-          },
-          renameByName: {},
-        },
-      },
-    ],
-  })
-);
 
 const histogramPanel = PanelBuilders.timeseries()
   .setCustomFieldConfig('drawStyle', DrawStyle.Bars)

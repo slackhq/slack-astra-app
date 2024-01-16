@@ -51,17 +51,15 @@ function getValueCountsForField(unmappedFieldValuesArray: any): ValueFrequency[]
 
 const InnerTitle = (field: Field) => {
   return (
-    <div>
-      <span
-        style={{
-          fontFamily: 'monospace',
-        }}
-      >
-        <h5>
-          <b>{field.name}</b>
-        </h5>
-      </span>
-    </div>
+  <span
+      style={{
+        fontFamily: 'monospace',
+      }}
+    >
+      <h5>
+        <b>{field.name}</b>
+      </h5>
+    </span>
   );
 };
 
@@ -72,7 +70,7 @@ const InnerContent = (
 ) => {
   let mostCommonValues = getValueCountsForField(field.unmappedFieldValuesArray)
   return (
-    <div>
+    <>
       <span>
         <b>
           Top {mostCommonValues.length} {mostCommonValues.length > 1 ? 'values' : 'value'}
@@ -117,7 +115,7 @@ const InnerContent = (
           </VerticalGroup>
         );
       })}
-    </div>
+    </>
   );
 };
 
@@ -135,7 +133,7 @@ const InnerFooter = (field: Field) => {
 const FieldValueFrequency = ({ field, children, onMinusClick, onPlusClick }: Props) => {
   // This doesn't make sense for this field
   if (field.name === '_source') {
-    return <div></div>;
+    return <></>;
   }
 
   return (
