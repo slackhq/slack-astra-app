@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 import { Field, ValueFrequency } from 'datasource/types';
 import { Toggletip } from './Toggletip';
 import { HorizontalGroup, VerticalGroup, Button } from '@grafana/ui';
