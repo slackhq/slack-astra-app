@@ -41,7 +41,7 @@ import { Field, Log } from 'datasource/types';
 import FieldValueFrequency from '../datasource/components/FieldValueFrequency';
 import LogsView from 'datasource/components/Logs/LogsView';
 import { FixedSizeList as List } from 'react-window'
-import { DARK_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_HIGHLIGHTED_BACKGROUND } from 'datasource/components/Logs/styles';
+import { DARK_THEME_BACKGROUND, DARK_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_BACKGROUND, LIGHT_THEME_HIGHLIGHTED_BACKGROUND } from 'datasource/components/Logs/styles';
 import AutoSizer from 'react-virtualized-auto-sizer'
 
 /**
@@ -261,9 +261,9 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
     const isTopTenMostPopularField = index <= data.topTenMostPopularFieldsLength;
 
     const isDarkTheme = useTheme2().isDark;
-    let fieldBackgroundColor = isDarkTheme ? '#181b1f' : '#FFFFFF';
+    let fieldBackgroundColor = isDarkTheme ? DARK_THEME_BACKGROUND : LIGHT_THEME_BACKGROUND;
     if (isTopTenMostPopularField) {
-      fieldBackgroundColor= isDarkTheme ? '#343741' : '#e6f1fa';
+      fieldBackgroundColor= isDarkTheme ?  DARK_THEME_HIGHLIGHTED_BACKGROUND : LIGHT_THEME_HIGHLIGHTED_BACKGROUND;
 
     }
 
