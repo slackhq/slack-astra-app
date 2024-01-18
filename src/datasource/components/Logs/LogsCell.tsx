@@ -6,7 +6,6 @@ import { Button, useTheme2 } from '@grafana/ui'
 import { dateTimeParse, getTimeZone } from '@grafana/data'
 import { DARK_THEME_HIGHLIGHTED_BACKGROUND, DARK_THEME_OUTLINE, LIGHT_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_OUTLINE } from './styles'
 
-
 interface LogKeyValProps {
     field: string,
     val: any
@@ -304,8 +303,6 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     }
 
     style['borderBottom'] =  outline;
-
-
 
     // Header row
     if (rowIndex === 0) {
