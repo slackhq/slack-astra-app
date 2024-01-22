@@ -26,8 +26,6 @@ import { AppRootProps, DataFrame } from '@grafana/data';
 import {
   Button,
   DrawStyle,
-  HorizontalGroup,
-  VerticalGroup,
   IconButton,
   InlineField,
   InlineLabel,
@@ -43,7 +41,8 @@ import { Field, Log } from 'datasource/types';
 import FieldValueFrequency from '../datasource/components/FieldValueFrequency';
 import LogsView from 'datasource/components/Logs/LogsView';
 import { FixedSizeList as List } from 'react-window'
-import { DARK_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_HIGHLIGHTED_BACKGROUND } from 'datasource/components/Logs/styles';
+import { DARK_THEME_BACKGROUND, DARK_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_BACKGROUND, LIGHT_THEME_HIGHLIGHTED_BACKGROUND } from 'datasource/components/Logs/styles';
+import AutoSizer from 'react-virtualized-auto-sizer'
 
 /**
  * The main explore component for KalDB, using the new Grafana scenes implementation.
@@ -257,12 +256,22 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
     return 'Unknown field';
   };
 
-  const ListItem = ({ index,  data }) => {
-    const field = data[index];
+  const ListItem = ({ index,  data, style }) => {
+    const field = data.fields[index];
+    const isTopTenMostPopularField = index <= data.topTenMostPopularFieldsLength;
+
+    const isDarkTheme = useTheme2().isDark;
+    let fieldBackgroundColor = isDarkTheme ? DARK_THEME_BACKGROUND : LIGHT_THEME_BACKGROUND;
+    if (isTopTenMostPopularField) {
+      fieldBackgroundColor= isDarkTheme ?  DARK_THEME_HIGHLIGHTED_BACKGROUND : LIGHT_THEME_HIGHLIGHTED_BACKGROUND;
+
+    }
 
     return (<div key={index} style={{
-      cursor: 'pointer'
+      cursor: 'pointer',
+      ...style
     }}>
+
       <FieldValueFrequency
         field={field}
         onPlusClick={(field: Field, value: string) => queryComponent.appendToQuery(`${field.name}: ${value}`)}
@@ -270,8 +279,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
           queryComponent.appendToQuery(`NOT ${field.name}: ${value}`)
         }
       >
-        <div>
-          <HorizontalGroup>
+        <div style={{backgroundColor: fieldBackgroundColor, display: 'flex', flexDirection: 'row', paddingLeft: '15px', alignItems: 'center', gap: '10px'}}>
             <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
             <span
               style={{
@@ -281,7 +289,6 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
             >
               {field.name}
             </span>
-          </HorizontalGroup>
         </div>
       </FieldValueFrequency>
     </div>);
@@ -289,54 +296,42 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
 
 
   return (
-    <div>
-      <div
-        style={{
-          backgroundColor: useTheme2().isDark ? DARK_THEME_HIGHLIGHTED_BACKGROUND : LIGHT_THEME_HIGHLIGHTED_BACKGROUND,
-          paddingLeft:'15px',
-        }}
-      >
-        <span
-          style={{
-            padding: '15px',
-            fontWeight: 'bold',
-          }}
-        >
-          Popular
-        </span>
-        <List
-          height={30*topTenMostPopularFields.length} 
-          width={"100%"}
-          itemCount={topTenMostPopularFields.length}
-          itemData={topTenMostPopularFields}
-          itemSize={30}
-          style={{
-            overflow: 'hidden',
-            maxWidth: '250px'
-          }}
-        >
-          {ListItem}
-        </List>
-      </div>
-      <div
-        style={{
-          paddingLeft:'15px',
-        }}
-      >
-        <List
-          height={33*fields.length} // TODO: This breaks virtualization since we're setting the height to the total. We should set it to a percentage of the screen.
-          width={"100%"}
-          itemCount={fields.length}
-          itemData={fields}
-          itemSize={30}
-          style={{
-            overflow: 'hidden',
-            maxWidth: '250px'
-          }}
-        >
-          {ListItem}
-        </List>
-        </div>
+    <div style={{width: '100%', height: '100%'}}>
+      <AutoSizer>
+        {
+          ({height, width}) => {
+            return (
+              <div
+                style={{
+                  paddingLeft:'15px',
+                  width: '100%', 
+                  height: '100%'
+                }}
+              >
+
+                <List
+                  height={height} 
+                  width={width}
+                  itemCount={topTenMostPopularFields.length + fields.length}
+                  itemData={
+                    {
+                      fields: [...topTenMostPopularFields, ...fields],
+                      topTenMostPopularFieldsLength: topTenMostPopularFields.length
+                    }}
+
+                  itemSize={30}
+                  style={{
+                    overflowX: 'hidden',
+                    maxWidth: '250px',
+                  }}
+                >
+                  {ListItem}
+                </List>
+              </div>
+            );
+          }
+        }
+      </AutoSizer>
     </div>
   );
 };
@@ -356,9 +351,9 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
       {loading ? (
         <LoadingPlaceholder text={'Loading...'} />
       ) : (
-        <VerticalGroup>
-          <HorizontalGroup spacing={'lg'} justify={'space-between'}>
-            <HorizontalGroup spacing={'xs'} justify={'flex-start'}>
+        <div style={{height: "100%", display: 'flex', flexDirection: 'column', justifyContent: 'flex-start'}}>
+          <div style={{display: 'flex', alignItems: 'center'}}>
+            <div style={{display: 'flex', justifyContent:'flex-start', alignItems: 'center'}}>
               <Button
                 size={'sm'}
                 variant={'secondary'}
@@ -373,12 +368,12 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
               >
                 Available fields:
               </span>
-            </HorizontalGroup>
+            </div>
 
             <Counter value={fields.length} />
-          </HorizontalGroup>
+          </div>
           {visible ? KalDBFieldsList(fields, topTenMostPopularFields) : null}
-        </VerticalGroup>
+        </div>
       )}
     </>
   );
@@ -708,6 +703,7 @@ const parseAndExtractLogData = (data: DataFrame[]) => {
           (value: object) => (
             new Map(Object.entries(value))
           ));
+        continue;
       }
 
       let mapped_field: Field = {
