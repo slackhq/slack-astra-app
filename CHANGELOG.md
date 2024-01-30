@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.0
+### New features
+* Significantly improved the performance through proper virtualization
+
+### Breaking changes
+* Significantly refactored the UI to be fully custom and more in-line with 
+our future design ideas/plans
+
+### Bugs squashed
+N/A
+
+
 ## 0.4.0
 ### New features
 * Improved the performance of the application by combining two network requests into one
