@@ -687,10 +687,16 @@ const parseAndExtractLogData = (data: DataFrame[]) => {
     let fieldCounts: Map<string, number> = new Map<string, number>();
 
     let mappedFields: Map<string, Field> = new Map<string, Field>();
-    let reconstructedLogs: Log[] = [];
+    let reconstructedLogs: Log[] = [...Array(data[0].length)];
     let timestamps: number[] = [];
 
     for (let unmappedField of data[0].fields) {
+      // TODO: Ignore _source for now. We'll likely need to revisit this
+      // when/if we want to support the JSON view
+      if (unmappedField.name === '_source') {
+        continue
+      }
+
       let unmappedFieldValuesArray = unmappedField.values.toArray();
       let logsWithDefinedValue = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
 
@@ -698,13 +704,19 @@ const parseAndExtractLogData = (data: DataFrame[]) => {
       if (unmappedField.name === "_timesinceepoch") {
         timestamps = [ ...unmappedField.values.toArray() ];
       }
-      if (unmappedField.name === "_source") {
-        reconstructedLogs = unmappedField.values.toArray().map(
-          (value: object) => (
-            new Map(Object.entries(value))
-          ));
-        continue;
-      }
+
+      // Convert the dataframe into how we traditionally think of logs
+      unmappedFieldValuesArray.forEach((value, index) => {
+        let newMap = new Map();
+        if (reconstructedLogs[index] !== undefined) {
+          newMap = reconstructedLogs[index];
+        }
+
+        if (value) {
+          newMap.set(unmappedField.name, value);
+          reconstructedLogs[index] = newMap;
+        }
+      })
 
       let mapped_field: Field = {
         name: unmappedField.name,

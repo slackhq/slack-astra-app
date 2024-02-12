@@ -26,7 +26,7 @@ const LogKeyVal = ({ field, val }: LogKeyValProps) => {
 
         </div>
         <div style={{display: 'inline-block'}}>
-            {val}
+            {JSON.stringify(val)}
         </div>
     </div>);
 }
@@ -45,7 +45,7 @@ const ExpandedLogKeyVal = ({ field, val }: ExpandedLogKeyValProps) => {
 
         </td>
         <td>
-            {val}
+            {JSON.stringify(val)}
         </td>
     </tr>);
 }
@@ -115,11 +115,13 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasour
                 </tr>
                 {
                     Array.from(log.keys()).map((key) => (
-                        <ExpandedLogKeyVal
-                            field={key}
-                            val={log.get(key)}
-                            key={key}
-                        />
+                        key !== '_source' ?
+                            <ExpandedLogKeyVal
+                                field={key}
+                                val={log.get(key)}
+                                key={key}
+                            />
+                        : <></>
                     ))       
                 }
             </table>
@@ -158,11 +160,13 @@ const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean,
         <div style={{maxHeight: '115px', overflow: 'hidden'}}>
             {
                 Array.from(log.keys()).map((key) => (
-                    <LogKeyVal
-                        field={key}
-                        val={log.get(key)}
-                        key={key}
-                    />
+                    key !== '_source' ?
+                        <LogKeyVal
+                            field={key}
+                            val={log.get(key)}
+                            key={key}
+                        />
+                    : <></>
                 ))
             }
         </div>
@@ -258,7 +262,6 @@ const shrinkRows = (expandedRows: boolean[], rowIndex: number, setSize: (index: 
     }
     return false;
 }
-
 
 
 const LogCell = ({ columnIndex, rowIndex, style, data }) => {
