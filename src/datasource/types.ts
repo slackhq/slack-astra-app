@@ -108,3 +108,14 @@ export interface Field {
 }
 
 export type Log = Map<string, any>;
+
+export type DatasourceUserConfig = {
+  database: string;
+  flavor: string;
+  logLevelField: string;
+  logMessageField: string;
+  maxConcurrentShardRequests: number;
+  pplEnabled: boolean;
+  timeField: string;
+  version: string;
+}
