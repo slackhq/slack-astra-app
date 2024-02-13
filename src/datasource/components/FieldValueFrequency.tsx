@@ -6,6 +6,7 @@ import { HorizontalGroup, VerticalGroup, Button } from '@grafana/ui';
 interface Props {
   field: Field;
   children: JSX.Element;
+  logMessageField: string;
   onPlusClick?: (field: Field, value: string) => void;
   onMinusClick?: (field: Field, value: string) => void;
 }
@@ -130,9 +131,9 @@ const InnerFooter = (field: Field) => {
 /**
  * A component to show the FieldValueFrequency for a given field value in the app UI.
  */
-const FieldValueFrequency = ({ field, children, onMinusClick, onPlusClick }: Props) => {
+const FieldValueFrequency = ({ field, children, onMinusClick, onPlusClick, logMessageField }: Props) => {
   // This doesn't make sense for this field
-  if (field.name === '_source') {
+  if (field.name === logMessageField) {
     return <></>;
   }
 

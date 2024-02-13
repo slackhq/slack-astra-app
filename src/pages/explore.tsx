@@ -37,7 +37,7 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { VariableHide } from '@grafana/schema';
-import { Field, Log } from 'datasource/types';
+import { Field, Log, DatasourceUserConfig } from 'datasource/types';
 import FieldValueFrequency from '../datasource/components/FieldValueFrequency';
 import LogsView from 'datasource/components/Logs/LogsView';
 import { FixedSizeList as List } from 'react-window'
@@ -74,6 +74,7 @@ interface FieldStatsState extends SceneObjectState {
   topTenMostPopularFields: Field[];
   visible: boolean;
   loading: boolean;
+  datasourceUserConfig?: DatasourceUserConfig;
 }
 
 interface LogsState extends SceneObjectState {
@@ -82,6 +83,7 @@ interface LogsState extends SceneObjectState {
   loading: boolean;
   totalCount: number;
   totalFailed: number;
+  datasourceUserConfig?: DatasourceUserConfig;
 }
 
 const NodeStatsRenderer = ({ model }: SceneComponentProps<NodeStats>) => {
@@ -183,7 +185,7 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
   );
 };
 
-const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
+const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[], datasourceUserConfig: DatasourceUserConfig) => {
   const getIcon = (field: Field): string => {
     if (field.type === 'string') {
       return 'fa fas fa-font';
@@ -259,6 +261,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
   const ListItem = ({ index,  data, style }) => {
     const field = data.fields[index];
     const isTopTenMostPopularField = index <= data.topTenMostPopularFieldsLength;
+    const logMessageField = data.logMessageField
 
     const isDarkTheme = useTheme2().isDark;
     let fieldBackgroundColor = isDarkTheme ? DARK_THEME_BACKGROUND : LIGHT_THEME_BACKGROUND;
@@ -274,6 +277,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
 
       <FieldValueFrequency
         field={field}
+        logMessageField={logMessageField}
         onPlusClick={(field: Field, value: string) => queryComponent.appendToQuery(`${field.name}: ${value}`)}
         onMinusClick={(field: Field, value: string) =>
           queryComponent.appendToQuery(`NOT ${field.name}: ${value}`)
@@ -316,7 +320,8 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
                   itemData={
                     {
                       fields: [...topTenMostPopularFields, ...fields],
-                      topTenMostPopularFieldsLength: topTenMostPopularFields.length
+                      topTenMostPopularFieldsLength: topTenMostPopularFields.length,
+                      logMessageField: datasourceUserConfig ? datasourceUserConfig.logMessageField : null
                     }}
 
                   itemSize={30}
@@ -337,7 +342,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[]) => {
 };
 
 const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
-  const { fields, topTenMostPopularFields, visible, loading } = model.useState();
+  const { fields, topTenMostPopularFields, visible, loading, datasourceUserConfig } = model.useState();
 
   const getFoldIcon = () => {
     if (visible) {
@@ -372,7 +377,7 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
 
             <Counter value={fields.length} />
           </div>
-          {visible ? KalDBFieldsList(fields, topTenMostPopularFields) : null}
+          {visible ? KalDBFieldsList(fields, topTenMostPopularFields, datasourceUserConfig) : null}
         </div>
       )}
     </>
@@ -387,9 +392,16 @@ class FieldStats extends SceneObjectBase<FieldStatsState> {
       topTenMostPopularFields: [],
       visible: true,
       loading: true,
+      datasourceUserConfig: null,
       ...state,
     });
   }
+  setDatasourceUserConfig= (datasourceUserConfig: DatasourceUserConfig) => {
+    this.setState({
+      datasourceUserConfig: datasourceUserConfig,
+    });
+  };
+
   setTopTenMostPopularFields = (fields: Field[]) => {
     this.setState({
       topTenMostPopularFields: fields,
@@ -416,7 +428,7 @@ class FieldStats extends SceneObjectBase<FieldStatsState> {
 }
 
 const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
-  const { logs, loading, timestamps } = model.useState();
+  const { logs, loading, timestamps, datasourceUserConfig } = model.useState();
 
   // TODO: This should be whatever the user set
   const timeField = "_timesinceepoch"
@@ -455,6 +467,7 @@ const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
               datasourceUid={linkedDatasourceUid}
               datasourceName={linkedDatasourceName}
               datasourceField={linkedDatasourceField}
+              logMessageField={datasourceUserConfig ? datasourceUserConfig.logMessageField : ''}
             />
         </div>
       )}
@@ -471,7 +484,14 @@ class KalDBLogs extends SceneObjectBase<LogsState> {
       totalCount: 0,
       totalFailed: 0,
       timestamps: [],
+      datasourceUserConfig: null,
       ...state,
+    });
+  }
+
+  setDatasourceUserConfig = (datasourceUserConfig: DatasourceUserConfig) => {
+    this.setState({
+      datasourceUserConfig: datasourceUserConfig
     });
   }
 
@@ -684,27 +704,59 @@ const parseAndExtractLogData = (data: DataFrame[]) => {
 
   // Set field names, the most popular fields, and calculates the frequency of the most common values
   if (data.length > 0 && data[0].fields.length > 0) {
+    const currentDataSource = dataSourceVariable
+      ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
+      .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
+
+    let datasourceUserConfig: DatasourceUserConfig = null;
+
+    if (currentDataSource) {
+      datasourceUserConfig = 
+        {
+          database: currentDataSource.jsonData.database,
+          flavor: currentDataSource.jsonData.flavor,
+          logLevelField: currentDataSource.jsonData.logLevelField,
+          logMessageField: currentDataSource.jsonData.logMessageField,
+          maxConcurrentShardRequests: currentDataSource.jsonData.maxConcurrentShardRequests,
+          pplEnabled: currentDataSource.jsonData.pplEnabled,
+          timeField: currentDataSource.jsonData.timeField,
+          version: currentDataSource.jsonData.version,
+        };
+      logsComponent.setDatasourceUserConfig(datasourceUserConfig);
+    }
+
     let fieldCounts: Map<string, number> = new Map<string, number>();
 
     let mappedFields: Map<string, Field> = new Map<string, Field>();
-    let reconstructedLogs: Log[] = [];
+    let reconstructedLogs: Log[] = [...Array(data[0].length)];
     let timestamps: number[] = [];
 
     for (let unmappedField of data[0].fields) {
+      // TODO: Ignore the logMessageField (e.g. _source) for now. We'll likely need to revisit this
+      // when/if we want to support the JSON view
+      if (unmappedField.name === logsComponent.state.datasourceUserConfig.logMessageField) {
+        continue
+      }
+
       let unmappedFieldValuesArray = unmappedField.values.toArray();
       let logsWithDefinedValue = unmappedFieldValuesArray.filter((value) => value !== undefined).length;
 
-      // TODO: This should be user configurable
-      if (unmappedField.name === "_timesinceepoch") {
+      if (unmappedField.name === logsComponent.state.datasourceUserConfig.timeField) {
         timestamps = [ ...unmappedField.values.toArray() ];
       }
-      if (unmappedField.name === "_source") {
-        reconstructedLogs = unmappedField.values.toArray().map(
-          (value: object) => (
-            new Map(Object.entries(value))
-          ));
-        continue;
-      }
+
+      // Convert the dataframe into how we traditionally think of logs
+      unmappedFieldValuesArray.forEach((value, index) => {
+        let newMap = new Map();
+        if (reconstructedLogs[index] !== undefined) {
+          newMap = reconstructedLogs[index];
+        }
+
+        if (value) {
+          newMap.set(unmappedField.name, value);
+          reconstructedLogs[index] = newMap;
+        }
+      })
 
       let mapped_field: Field = {
         name: unmappedField.name,
@@ -737,6 +789,7 @@ const parseAndExtractLogData = (data: DataFrame[]) => {
 
     fieldComponent.setFields([...mappedFields.values()]);
     fieldComponent.setTopTenMostPopularFields(topTenMostPopularFields);
+    fieldComponent.setDatasourceUserConfig(datasourceUserConfig);
   }
   return data;
 }

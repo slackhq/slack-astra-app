@@ -26,7 +26,7 @@ const LogKeyVal = ({ field, val }: LogKeyValProps) => {
 
         </div>
         <div style={{display: 'inline-block'}}>
-            {val}
+            {JSON.stringify(val)}
         </div>
     </div>);
 }
@@ -45,7 +45,7 @@ const ExpandedLogKeyVal = ({ field, val }: ExpandedLogKeyValProps) => {
 
         </td>
         <td>
-            {val}
+            {JSON.stringify(val)}
         </td>
     </tr>);
 }
@@ -56,10 +56,15 @@ interface ExpandedDocumentProps {
     datasourceUid: string,
     datasourceName: string,
     datasourceField: string,
+    logMessageField: string,
 }
 
 
-const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasourceField }: ExpandedDocumentProps) => {
+const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasourceField, logMessageField }: ExpandedDocumentProps) => {
+    // The index in the logs is off by one from the index in the table (due to the header row). In this
+    // case we care about the index in the table, so add one to it.
+    index += 1;
+
     const { setSize, windowWidth } = getLogTableContext();
     const root = React.useRef<HTMLDivElement>();
     React.useEffect(() => {
@@ -115,11 +120,13 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasour
                 </tr>
                 {
                     Array.from(log.keys()).map((key) => (
-                        <ExpandedLogKeyVal
-                            field={key}
-                            val={log.get(key)}
-                            key={key}
-                        />
+                        key !== logMessageField ?
+                            <ExpandedLogKeyVal
+                                field={key}
+                                val={log.get(key)}
+                                key={key}
+                            />
+                        : <></>
                     ))       
                 }
             </table>
@@ -143,7 +150,7 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasour
 }
 
 
-const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean, datasourceUid: string, datasourceName: string, datasourceField: string) => (
+const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean, datasourceUid: string, datasourceName: string, datasourceField: string, logMessageField: string) => (
     <div
         style={{
                 display: 'inline-block',
@@ -158,11 +165,13 @@ const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean,
         <div style={{maxHeight: '115px', overflow: 'hidden'}}>
             {
                 Array.from(log.keys()).map((key) => (
-                    <LogKeyVal
-                        field={key}
-                        val={log.get(key)}
-                        key={key}
-                    />
+                    key !== logMessageField ?
+                        <LogKeyVal
+                            field={key}
+                            val={log.get(key)}
+                            key={key}
+                        />
+                    : <></>
                 ))
             }
         </div>
@@ -174,6 +183,7 @@ const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean,
                     datasourceUid={datasourceUid}
                     datasourceName={datasourceName}
                     datasourceField={datasourceField}
+                    logMessageField={logMessageField}
                 />)
                       
             : ''
@@ -260,16 +270,14 @@ const shrinkRows = (expandedRows: boolean[], rowIndex: number, setSize: (index: 
 }
 
 
-
 const LogCell = ({ columnIndex, rowIndex, style, data }) => {
-    const log = data.logs[rowIndex];
-    const timestamp = data.timestamps[rowIndex];
     const column = data.columns[columnIndex];
     const setExpandedRowsAndReRender = data.setExpandedRowsAndReRender;
     const expandedRows = data.expandedRows;
     const datasourceUid: string = data.datasourceUid;
     const datasourceName: string = data.datasourceName;
     const datasourceField: string = data.datasourceField;
+    const logMessageField: string = data.logMessageField;
     const { setSize } = getLogTableContext();
     const darkModeEnabled = useTheme2().isDark ;
 
@@ -277,12 +285,6 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     // TODO: Ignoring for now as these will be used in a future pass
     // const _timeField = data.timeField;
     // const _setColumns = data.setColumns
-
-    const handleOnClick = (rowIndex: number): any => {
-        const newExpandedRows = invertRow(expandedRows, rowIndex);
-        shrinkRows(newExpandedRows, rowIndex, setSize);
-        setExpandedRowsAndReRender([...newExpandedRows], rowIndex);
-    }
 
     const outline = darkModeEnabled ? DARK_THEME_OUTLINE : LIGHT_THEME_OUTLINE;
 
@@ -310,10 +312,22 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
 
     }
 
+    // The 0th row is the header row, but we still need to render the data in 
+    // row 0. Thus the rowIndex is technically 1 more than the log length 
+    rowIndex -= 1;
+    const log = data.logs[rowIndex];
+    const timestamp = data.timestamps[rowIndex];
+
+    const handleOnClick = (rowIndex: number): any => {
+        const newExpandedRows = invertRow(expandedRows, rowIndex);
+        shrinkRows(newExpandedRows, rowIndex + 1, setSize);
+        setExpandedRowsAndReRender([...newExpandedRows], rowIndex);
+    }
+
     if (column.logColumnType === LogColumnType.TIME) {
         return TimestampCell(timestamp, style, rowIndex, expandedRows, handleOnClick);
     } else if (column.logColumnType === LogColumnType.DOCUMENT) {
-        return DocumentCell(log, style, rowIndex, expandedRows[rowIndex], datasourceUid, datasourceName, datasourceField);
+        return DocumentCell(log, style, rowIndex, expandedRows[rowIndex], datasourceUid, datasourceName, datasourceField, logMessageField);
     } else {
         return FieldCell();
     }
