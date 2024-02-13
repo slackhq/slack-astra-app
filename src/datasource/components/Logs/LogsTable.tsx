@@ -76,7 +76,7 @@ const LogsTable = ({ logs, timeField, columns, timestamps, expandedRows, setColu
                             columnCount={columns.length}
                             columnWidth={index => columns[index].logColumnType === LogColumnType.TIME ? 300 : width-310}
                             height={height}
-                            rowCount={logs.length}
+                            rowCount={logs.length + 1}
                             rowHeight={getSize}
                             width={width}
                             itemData={{logs, timestamps, columns, timeField, setColumns, setExpandedRowsAndReRender, expandedRows, datasourceUid, datasourceName, datasourceField}}

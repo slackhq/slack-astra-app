@@ -60,6 +60,10 @@ interface ExpandedDocumentProps {
 
 
 const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasourceField }: ExpandedDocumentProps) => {
+    // The index in the logs is off by one from the index in the table (due to the header row). In this
+    // case we care about the index in the table, so add one to it.
+    index += 1;
+
     const { setSize, windowWidth } = getLogTableContext();
     const root = React.useRef<HTMLDivElement>();
     React.useEffect(() => {
@@ -265,8 +269,6 @@ const shrinkRows = (expandedRows: boolean[], rowIndex: number, setSize: (index: 
 
 
 const LogCell = ({ columnIndex, rowIndex, style, data }) => {
-    const log = data.logs[rowIndex];
-    const timestamp = data.timestamps[rowIndex];
     const column = data.columns[columnIndex];
     const setExpandedRowsAndReRender = data.setExpandedRowsAndReRender;
     const expandedRows = data.expandedRows;
@@ -280,12 +282,6 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     // TODO: Ignoring for now as these will be used in a future pass
     // const _timeField = data.timeField;
     // const _setColumns = data.setColumns
-
-    const handleOnClick = (rowIndex: number): any => {
-        const newExpandedRows = invertRow(expandedRows, rowIndex);
-        shrinkRows(newExpandedRows, rowIndex, setSize);
-        setExpandedRowsAndReRender([...newExpandedRows], rowIndex);
-    }
 
     const outline = darkModeEnabled ? DARK_THEME_OUTLINE : LIGHT_THEME_OUTLINE;
 
@@ -311,6 +307,18 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     if (rowIndex === 0) {
         return HeaderCell(column, style)
 
+    }
+
+    // The 0th row is the header row, but we still need to render the data in 
+    // row 0. Thus the rowIndex is technically 1 more than the log length 
+    rowIndex -= 1;
+    const log = data.logs[rowIndex];
+    const timestamp = data.timestamps[rowIndex];
+
+    const handleOnClick = (rowIndex: number): any => {
+        const newExpandedRows = invertRow(expandedRows, rowIndex);
+        shrinkRows(newExpandedRows, rowIndex + 1, setSize);
+        setExpandedRowsAndReRender([...newExpandedRows], rowIndex);
     }
 
     if (column.logColumnType === LogColumnType.TIME) {
