@@ -428,6 +428,11 @@ const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
   let linkedDatasource = null;
   let linkedDatasourceName = ''; 
   let linkedDatasourceField = '';
+  let logMessageField = '';
+
+  if (currentDataSource) {
+    logMessageField = currentDataSource.jsonData.logMessageField;
+  }
 
   if (currentDataSource && currentDataSource.jsonData.dataLinks?.length > 0) {
     linkedDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
@@ -455,6 +460,7 @@ const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
               datasourceUid={linkedDatasourceUid}
               datasourceName={linkedDatasourceName}
               datasourceField={linkedDatasourceField}
+              logMessageField={logMessageField}
             />
         </div>
       )}

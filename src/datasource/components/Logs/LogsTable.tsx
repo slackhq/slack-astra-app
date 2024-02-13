@@ -33,9 +33,10 @@ interface LogsTableProps {
     setExpandedRows: ((value: boolean[] | ((preVar: boolean[]) => boolean[])) => void);
     setColumns: ((value: LogColumn[] | ((preVar: LogColumn[]) => LogColumn[])) => void);
     datasourceField: string;
+    logMessageField: string;
 }
 
-const LogsTable = ({ logs, timeField, columns, timestamps, expandedRows, setColumns, setExpandedRows, datasourceUid, datasourceName, datasourceField }: LogsTableProps) => {
+const LogsTable = ({ logs, timeField, columns, timestamps, expandedRows, setColumns, setExpandedRows, datasourceUid, datasourceName, datasourceField, logMessageField }: LogsTableProps) => {
     let gridRef: React.RefObject<Grid> = React.createRef<Grid>();
 
     // In order to get highly variable (and unknown at the time of rendering) row heights in a virtualized environment
@@ -79,7 +80,7 @@ const LogsTable = ({ logs, timeField, columns, timestamps, expandedRows, setColu
                             rowCount={logs.length + 1}
                             rowHeight={getSize}
                             width={width}
-                            itemData={{logs, timestamps, columns, timeField, setColumns, setExpandedRowsAndReRender, expandedRows, datasourceUid, datasourceName, datasourceField}}
+                            itemData={{logs, timestamps, columns, timeField, setColumns, setExpandedRowsAndReRender, expandedRows, datasourceUid, datasourceName, datasourceField, logMessageField}}
                         >
                             {LogCell}
                         </Grid>

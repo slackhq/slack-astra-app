@@ -56,10 +56,11 @@ interface ExpandedDocumentProps {
     datasourceUid: string,
     datasourceName: string,
     datasourceField: string,
+    logMessageField: string,
 }
 
 
-const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasourceField }: ExpandedDocumentProps) => {
+const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasourceField, logMessageField }: ExpandedDocumentProps) => {
     // The index in the logs is off by one from the index in the table (due to the header row). In this
     // case we care about the index in the table, so add one to it.
     index += 1;
@@ -119,7 +120,7 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasour
                 </tr>
                 {
                     Array.from(log.keys()).map((key) => (
-                        key !== '_source' ?
+                        key !== logMessageField ?
                             <ExpandedLogKeyVal
                                 field={key}
                                 val={log.get(key)}
@@ -149,7 +150,7 @@ const ExpandedDocument  = ({ log, index, datasourceUid, datasourceName, datasour
 }
 
 
-const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean, datasourceUid: string, datasourceName: string, datasourceField: string) => (
+const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean, datasourceUid: string, datasourceName: string, datasourceField: string, logMessageField: string) => (
     <div
         style={{
                 display: 'inline-block',
@@ -164,7 +165,7 @@ const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean,
         <div style={{maxHeight: '115px', overflow: 'hidden'}}>
             {
                 Array.from(log.keys()).map((key) => (
-                    key !== '_source' ?
+                    key !== logMessageField ?
                         <LogKeyVal
                             field={key}
                             val={log.get(key)}
@@ -182,6 +183,7 @@ const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean,
                     datasourceUid={datasourceUid}
                     datasourceName={datasourceName}
                     datasourceField={datasourceField}
+                    logMessageField={logMessageField}
                 />)
                       
             : ''
@@ -275,6 +277,7 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     const datasourceUid: string = data.datasourceUid;
     const datasourceName: string = data.datasourceName;
     const datasourceField: string = data.datasourceField;
+    const logMessageField: string = data.logMessageField;
     const { setSize } = getLogTableContext();
     const darkModeEnabled = useTheme2().isDark ;
 
@@ -324,7 +327,7 @@ const LogCell = ({ columnIndex, rowIndex, style, data }) => {
     if (column.logColumnType === LogColumnType.TIME) {
         return TimestampCell(timestamp, style, rowIndex, expandedRows, handleOnClick);
     } else if (column.logColumnType === LogColumnType.DOCUMENT) {
-        return DocumentCell(log, style, rowIndex, expandedRows[rowIndex], datasourceUid, datasourceName, datasourceField);
+        return DocumentCell(log, style, rowIndex, expandedRows[rowIndex], datasourceUid, datasourceName, datasourceField, logMessageField);
     } else {
         return FieldCell();
     }
