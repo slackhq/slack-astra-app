@@ -870,7 +870,6 @@ const histogramPanel = PanelBuilders.timeseries()
 const histogramResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
   return source.pipe(
     map((data: DataFrame[]) => {
-      // debugger;
       if (data.length > 0 && data[0].meta['shards']) {
         let counter = 0;
 
