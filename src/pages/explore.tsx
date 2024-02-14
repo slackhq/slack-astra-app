@@ -872,8 +872,18 @@ const histogramResultTransformation: CustomTransformOperator = () => (source: Ob
     map((data: DataFrame[]) => {
       if (data.length > 0 && data[0].meta['shards']) {
         let counter = 0;
-        for (let i = data[1].fields[1].values['buffer'].length - 1; i >= 0; i--) {
-          counter += data[1].fields[1].values['buffer'][i];
+
+        // In Grafana 9, the values live in `values['buffer']`.
+        // In Grafana 10, they're just in `values`
+        let buffer: any = [];
+        if (data[1].fields[1].values['buffer']) {
+          buffer = data[1].fields[1].values['buffer']
+        } else {
+          buffer = data[1].fields[1].values
+        }
+
+        for (let i = buffer.length - 1; i >= 0; i--) {
+          counter += buffer[i];
         }
         resultsCounter.setResults(counter);
         histogramNodeStats.setCount(data[0].meta['shards'].total, data[0].meta['shards'].failed);
