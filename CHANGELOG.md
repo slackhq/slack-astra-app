@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.1
+### New features
+* N/A
+
+### Breaking changes
+* N/A
+
+### Bugs squashed
+* Fixed a bug that was preventing the histogram from rendering on Grafana 10
+* Fixed an off-by-one error that was preventing a result with 1 log returned from rendering
+* Fixed a bug that was preventing metadata fields from being rendered in the expanded view
+
+
 ## 0.5.0
 ### New features
 * Significantly improved the performance through proper virtualization
