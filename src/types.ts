@@ -1,1 +1,1 @@
-export interface KalDbSettings {}
+export interface AstraSettings {}

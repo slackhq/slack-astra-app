@@ -7,7 +7,7 @@ import LogsTable from 'datasource/components/Logs/LogsTable'
 interface LogsViewProps {
     logs: Log[];
     timeField: string;
-    timestamps: number[];
+    timestamps: string[];
     datasourceUid: string;
     datasourceName: string;
     datasourceField: string;

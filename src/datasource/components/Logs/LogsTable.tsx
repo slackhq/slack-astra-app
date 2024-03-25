@@ -26,7 +26,7 @@ interface LogsTableProps {
     logs: Log[];
     timeField: string;
     columns: LogColumn[];
-    timestamps: number[];
+    timestamps: string[];
     expandedRows: boolean[];
     datasourceUid: string;
     datasourceName: string;

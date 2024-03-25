@@ -486,10 +486,6 @@ export class OpenSearchResponse {
               doc['level'] = doc[logLevelField];
             }
 
-            // The hit.<timeField> field is in fractional seconds, but we expect it to be in milliseconds later in rendering
-            // NOTE: This may change in the future to a different format
-            doc['_timesinceepoch'] = doc['_timesinceepoch'] * 1000;
-
             series.add(doc);
           }
           if (isLogsRequest) {
@@ -673,14 +669,14 @@ type Doc = {
   _index: string;
   _score?: any;
   _source?: any;
-  _timesinceepoch: number;
+  _timesinceepoch: any;
 };
 
 /**
  * Flatten the docs from response mainly the _source part which can be nested. This flattens it so that it is one level
  * deep and the keys are: `level1Name.level2Name...`. Also returns list of all properties from all the docs (not all
  * docs have to have the same keys).
- * @param hits - The hits from KalDB
+ * @param hits - The hits from Astra
  */
 const flattenHits = (hits: Doc[]): { docs: Array<Record<string, any>>; propNames: string[] } => {
   const docs: any[] = [];

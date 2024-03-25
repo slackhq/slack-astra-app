@@ -2,7 +2,7 @@ version: '3.0'
 
 services:
   grafana:
-    container_name: 'slack-kaldb-app'
+    container_name: 'slack-astra-app'
     build:
       context: ./.config
       args:
@@ -10,7 +10,7 @@ services:
     ports:
       - 3000:3000/tcp
     volumes:
-      - ./dist:/var/lib/grafana/plugins/slack-kaldb-app
+      - ./dist:/var/lib/grafana/plugins/slack-astra-app
       - ./provisioning:/etc/grafana/provisioning
     environment:
       GF_LOG_MODE: "console file"
@@ -19,5 +19,5 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
       GF_PATHS_PLUGINS: "/var/lib/grafana/plugins"
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "slack-kaldb-app,slack-kaldb-app-backend-datasource"
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "slack-astra-app,slack-astra-app-backend-datasource"
       GF_SERVER_ENABLE_GZIP: "true"

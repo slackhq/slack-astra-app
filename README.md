@@ -11,7 +11,7 @@ To get started [install](https://grafana.com/docs/grafana/latest/plugins/install
 the Grafana plugins page under "Astra by Slack". Once installed a new datasource type will be available, and Astra will
 appear in the navigation under Apps.
 
-![Astra explore](src/img/kaldb_explore.png)
+![Astra explore](src/img/explore.png)
 
 ## Other resources
 * [Getting started with development](.github/CONTRIBUTING.md#getting-started-with-development)

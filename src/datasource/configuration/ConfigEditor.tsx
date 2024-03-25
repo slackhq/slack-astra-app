@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { DataSourceHttpSettings } from '@grafana/ui';
 import { DataSourcePluginOptionsEditorProps } from '@grafana/data';
 import { OpenSearchOptions } from '../types';
-import { KalDbDetails } from './KalDbDetails';
+import { AstraDetails } from './AstraDetails';
 import { LogsConfig } from './LogsConfig';
 import { DataLinks } from './DataLinks';
 import { coerceOptions, isValidOptions } from './utils';
@@ -34,7 +34,7 @@ export const ConfigEditor = (props: Props) => {
         renderSigV4Editor={<SIGV4ConnectionConfig {...props}></SIGV4ConnectionConfig>}
       />
 
-      <KalDbDetails value={options} onChange={onOptionsChange} />
+      <AstraDetails value={options} onChange={onOptionsChange} />
 
       <LogsConfig
         value={options.jsonData}

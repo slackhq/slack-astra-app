@@ -1,8 +1,8 @@
-package kaldb
+package astra
 
 import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	es "github.com/slackhq/slack-kaldb-app/pkg/kaldb/client"
+	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
 )
 
 type pplHandler struct {

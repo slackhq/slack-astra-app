@@ -1,4 +1,4 @@
-package kaldb
+package astra
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ import (
 	"github.com/grafana/opensearch-datasource/pkg/null"
 	"github.com/grafana/opensearch-datasource/pkg/tsdb"
 	"github.com/grafana/opensearch-datasource/pkg/utils"
-	es "github.com/slackhq/slack-kaldb-app/pkg/kaldb/client"
+	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
 )
 
 const (

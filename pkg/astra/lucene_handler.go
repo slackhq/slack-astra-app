@@ -1,4 +1,4 @@
-package kaldb
+package astra
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/opensearch-datasource/pkg/tsdb"
 	"github.com/grafana/opensearch-datasource/pkg/utils"
-	es "github.com/slackhq/slack-kaldb-app/pkg/kaldb/client"
+	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
 )
 
 type luceneHandler struct {

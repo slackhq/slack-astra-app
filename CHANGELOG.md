@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.0
+### New features
+* N/A
+
+### Breaking changes
+* Project name updated - this will require require re-creating any existing data sources 
+* Minimum Grafana version updated to 10.0
+
+### Bugs squashed
+* Resolved an issue where date time formatting was incorrectly handled after Astra updates to support ES datasources
+* Resolved an issue where empty results would incorrectly render faux table contents
+* Resolved an issue where empty results would not correctly clear previous result state
+
 ## 0.5.1
 ### New features
 * N/A
@@ -112,19 +125,19 @@ N/A
 N/A
 
 ### Bugs squashed
-* Fixed an issue where the KalDB log UI would fail to render in Grafana 9.X versions
-* Fixed an issue where we weren't properly mapping and parsing the dates returned by KalDB
+* Fixed an issue where the Astra log UI would fail to render in Grafana 9.X versions
+* Fixed an issue where we weren't properly mapping and parsing the dates returned by Astra
 * Fixed an issue where we still allowed folks to select "PPL" as a query type, despite it not being (currently)
 supported
 
 ## 0.0.2
 
 ### New features
-* Initial release of KalDB backend datasource
-* Shard count (total, failed) from KalDB explore page
+* Initial release of Astra backend datasource
+* Shard count (total, failed) from Astra explore page
 
 ### Breaking changes
-* Elasticsearch is no longer a supported datasource from KalDB explore UI
+* Elasticsearch is no longer a supported datasource from Astra explore UI
 
 ## 0.0.1
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	es "github.com/slackhq/slack-kaldb-app/pkg/kaldb/client"
+	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
 	"github.com/grafana/es-open-distro-datasource/pkg/null"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	. "github.com/smartystreets/goconvey/convey"

@@ -1,7 +1,7 @@
 {
-  "name": "slack-kaldb-app",
-  "version": "0.5.1",
-  "description": "Grafana KalDB App",
+  "name": "slack-astra-app",
+  "version": "0.6.0",
+  "description": "Grafana Astra App",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "build-go": "mage buildAll && mv dist/gpx* dist/datasource",
@@ -16,7 +16,7 @@
     "test": "jest --watch --onlyChanged",
     "test:ci": "jest --passWithNoTests --maxWorkers 4",
     "typecheck": "tsc --noEmit",
-    "zip": "zip slack-kaldb-app.zip dist/ -rj"
+    "zip": "zip slack-astra-app.zip dist/ -rj"
   },
   "author": "Slack",
   "license": "Apache-2.0",

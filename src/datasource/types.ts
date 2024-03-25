@@ -92,7 +92,7 @@ export enum QueryType {
 export enum Flavor {
   Elasticsearch = 'elasticsearch',
   OpenSearch = 'opensearch',
-  KalDB = 'kaldb',
+  Astra = 'astra',
 }
 
 export interface ValueFrequency {

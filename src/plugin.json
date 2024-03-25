@@ -1,20 +1,20 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/master/docs/sources/developers/plugins/plugin.schema.json",
   "type": "app",
-  "name": "KalDB",
-  "id": "slack-kaldb-app",
-  "executable": "gpx_slack_kaldb_app_datasource_backend",
+  "name": "Astra",
+  "id": "slack-astra-app",
+  "executable": "gpx_slack_astra_app_datasource_backend",
   "info": {
-    "description": "Grafana KalDB App",
+    "description": "Grafana Astra App",
     "author": {
       "name": "Slack"
     },
-    "keywords": ["KalDB"],
+    "keywords": ["Astra"],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "links": [{ "name": "Github", "url": "https://github.com/slackhq/kaldb" }],
+    "links": [{ "name": "Github", "url": "https://github.com/slackhq/astra" }],
     "screenshots": [],
     "version": "%VERSION%",
     "updated": "%TODAY%"
@@ -24,7 +24,7 @@
     {
       "type": "page",
       "name": "Explore",
-      "path": "/a/slack-kaldb-app",
+      "path": "/a/slack-astra-app",
       "icon": "compass",
       "role": "Viewer",
       "addToNav": true,
@@ -39,8 +39,8 @@
   ],
 
   "dependencies": {
-    "grafanaDependency": ">=9.5.0",
-    "grafanaVersion": "9.5.0",
+    "grafanaDependency": ">=10.0.0",
+    "grafanaVersion": "10.0.0",
     "plugins": []
   }
 }

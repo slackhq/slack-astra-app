@@ -191,7 +191,7 @@ const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean,
     </div>
 )
 
-const TimestampCell = (timestamp: number, style: any, rowIndex: number, expandedRows: boolean[], onClick: ((index: number) => void)) => {
+const TimestampCell = (timestamp: string, style: any, rowIndex: number, expandedRows: boolean[], onClick: ((index: number) => void)) => {
     const getFoldIcon = () => {
         if (expandedRows[rowIndex]) {
             return 'angle-down';

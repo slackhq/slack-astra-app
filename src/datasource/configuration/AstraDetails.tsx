@@ -19,12 +19,12 @@ type Props = {
   value: DataSourceSettings<OpenSearchOptions>;
   onChange: (value: DataSourceSettings<OpenSearchOptions>) => void;
 };
-export const KalDbDetails = (props: Props) => {
+export const AstraDetails = (props: Props) => {
   const { value, onChange } = props;
 
   return (
     <>
-      <h3 className="page-heading">KalDB details</h3>
+      <h3 className="page-heading">Astra details</h3>
 
       <div className="gf-form-group">
         <div className="gf-form-inline">
@@ -35,7 +35,7 @@ export const KalDbDetails = (props: Props) => {
               label="Index name"
               value={value.jsonData.database || ''}
               onChange={jsonDataChangeHandler('database', value, onChange)}
-              placeholder={'es-index-name'}
+              placeholder={'_all'}
               required
             />
           </div>

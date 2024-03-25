@@ -1,4 +1,4 @@
-package kaldb
+package astra
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	es "github.com/slackhq/slack-kaldb-app/pkg/kaldb/client"
+	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

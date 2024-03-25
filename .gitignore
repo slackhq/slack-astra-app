@@ -26,5 +26,5 @@ ci/
 e2e-results/
 
 /.idea
-/slack-kaldb-app.zip
+/slack-astra-app.zip
 .DS_Store

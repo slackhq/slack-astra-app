@@ -1,7 +1,7 @@
 import { PluginMeta } from '@grafana/data';
 
-export class KalDbConfigCtrl {
-  static template = '<h2>KalDB Config</h2>';
+export class AstraConfigCtrl {
+  static template = '<h2>Astra Config</h2>';
 
   appEditCtrl: any;
   appModel?: PluginMeta;
