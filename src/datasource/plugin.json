@@ -1,20 +1,20 @@
 {
   "type": "datasource",
-  "name": "KalDB",
-  "id": "slack-kaldb-app-backend-datasource",
+  "name": "Astra",
+  "id": "slack-astra-app-backend-datasource",
   "category": "logging",
   "alerting": true,
   "annotations": true,
   "metrics": true,
   "logs": true,
   "backend": true,
-  "executable": "gpx_slack_kaldb_app_datasource_backend",
+  "executable": "gpx_slack_astra_app_datasource_backend",
   "info": {
-    "description": "Grafana KalDB App",
+    "description": "Grafana Astra App",
     "author": {
       "name": "Slack"
     },
-    "keywords": ["KalDB"],
+    "keywords": ["Astra"],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"

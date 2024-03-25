@@ -1,4 +1,4 @@
-package kaldb
+package astra
 
 import (
 	"github.com/bitly/go-simplejson"

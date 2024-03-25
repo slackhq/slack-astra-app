@@ -1,4 +1,4 @@
-module github.com/slackhq/slack-kaldb-app
+module github.com/slackhq/slack-astra-app
 
 go 1.14
 

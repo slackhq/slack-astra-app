@@ -1,4 +1,4 @@
-package kaldb
+package astra
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/opensearch-datasource/pkg/tsdb"
-	es "github.com/slackhq/slack-kaldb-app/pkg/kaldb/client"
+	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
 )
 
-// KalDbExecutor represents a handler for handling KalDb datasource request
-type KalDbExecutor struct{}
+// AstraExecutor represents a handler for handling Astra datasource request
+type AstraExecutor struct{}
 
 var (
 	intervalCalculator tsdb.IntervalCalculator
@@ -22,14 +22,14 @@ type TsdbQueryEndpoint interface {
 	Query(ctx context.Context, ds *backend.DataSourceInstanceSettings, query *tsdb.TsdbQuery) (*tsdb.Response, error)
 }
 
-type KalDbDatasource struct {
+type AstraDatasource struct {
 	dsInfo *backend.DataSourceInstanceSettings
 }
 
-func NewKalDbDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func NewAstraDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	log.DefaultLogger.Debug("Initializing new data source instance")
 
-	return &KalDbDatasource{
+	return &AstraDatasource{
 		dsInfo: &settings,
 	}, nil
 }
@@ -38,7 +38,7 @@ func NewKalDbDatasource(settings backend.DataSourceInstanceSettings) (instancemg
 // The main use case for these health checks is the test button on the
 // datasource configuration page which allows users to verify that
 // a datasource is working as expected.
-func (ds *KalDbDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (ds *AstraDatasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	res := &backend.CheckHealthResult{}
 
 	res.Status = backend.HealthStatusOk
@@ -50,7 +50,7 @@ func (ds *KalDbDatasource) CheckHealth(ctx context.Context, req *backend.CheckHe
 // req contains the queries []DataQuery (where each query contains RefID as a unique identifier).
 // The QueryDataResponse contains a map of RefID to the response for each query, and each response
 // contains Frames ([]*Frame).
-func (ds *KalDbDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (ds *AstraDatasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	if len(req.Queries) == 0 {
 		return nil, fmt.Errorf("query contains no queries")
 	}

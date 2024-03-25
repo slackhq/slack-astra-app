@@ -1,13 +1,12 @@
 apiVersion: 1
 
 deleteDatasources:
-  - name: KalDB
+  - name: Astra
     orgId: 1
 
 datasources:
-  - name: KalDB Query [ES]
+  - name: Astra Query [ES]
     type: elasticsearch
-    access: proxy
     url: "host.docker.internal:8081"
     password:
     user:
@@ -18,8 +17,7 @@ datasources:
     withCredentials:
     isDefault: true
     jsonData:
-      timeField: "@timestamp"
-      esVersion: 7.0.0
+      timeField: "_timesinceepoch"
       maxConcurrentShardRequests: 5
       logMessageField: "_source"
       logLevelField: ""

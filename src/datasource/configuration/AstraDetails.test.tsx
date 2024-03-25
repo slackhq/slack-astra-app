@@ -1,6 +1,6 @@
 import React from 'react';
 import { mount } from 'enzyme';
-import { KalDbDetails } from './KalDbDetails';
+import { AstraDetails } from './AstraDetails';
 import { createDefaultConfigOptions } from './mocks';
 import { LegacyForms } from '@grafana/ui';
 import { Flavor, OpenSearchOptions } from '../types';
@@ -10,12 +10,12 @@ const { Select, Switch } = LegacyForms;
 
 describe('OpenSearchDetails', () => {
   it('should render without error', () => {
-    mount(<KalDbDetails onChange={() => {}} value={createDefaultConfigOptions()} />);
+    mount(<AstraDetails onChange={() => {}} value={createDefaultConfigOptions()} />);
   });
 
   it.skip('should change database on interval change when not set explicitly', () => {
     const onChangeMock = jest.fn();
-    const wrapper = mount(<KalDbDetails onChange={onChangeMock} value={createDefaultConfigOptions()} />);
+    const wrapper = mount(<AstraDetails onChange={onChangeMock} value={createDefaultConfigOptions()} />);
     const selectEl = wrapper.find({ label: 'Pattern' }).find(Select);
     selectEl.props().onChange({ value: 'Daily', label: 'Daily' }, { action: 'select-option', option: undefined });
 
@@ -27,7 +27,7 @@ describe('OpenSearchDetails', () => {
     const onChangeMock = jest.fn();
     const options = createDefaultConfigOptions();
     options.database = '[logstash-]YYYY.MM.DD.HH';
-    const wrapper = mount(<KalDbDetails onChange={onChangeMock} value={options} />);
+    const wrapper = mount(<AstraDetails onChange={onChangeMock} value={options} />);
 
     const selectEl = wrapper.find({ label: 'Pattern' }).find(Select);
     selectEl.props().onChange({ value: 'Monthly', label: 'Monthly' }, { action: 'select-option', option: undefined });
@@ -41,7 +41,7 @@ describe('OpenSearchDetails', () => {
       const onChangeMock = jest.fn();
       const options = createDefaultConfigOptions();
       options.jsonData.pplEnabled = false;
-      const wrapper = mount(<KalDbDetails onChange={onChangeMock} value={options} />);
+      const wrapper = mount(<AstraDetails onChange={onChangeMock} value={options} />);
 
       const switchEl = wrapper.find({ label: 'PPL enabled' }).find(Switch);
       const event = {
@@ -123,7 +123,7 @@ describe('OpenSearchDetails', () => {
             version: tc.version,
           },
         };
-        const wrapper = mount(<KalDbDetails onChange={onChangeMock} value={options} />);
+        const wrapper = mount(<AstraDetails onChange={onChangeMock} value={options} />);
 
         wrapper.setProps({
           onChange: onChangeMock,

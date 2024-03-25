@@ -45,7 +45,7 @@ import { DARK_THEME_BACKGROUND, DARK_THEME_HIGHLIGHTED_BACKGROUND, LIGHT_THEME_B
 import AutoSizer from 'react-virtualized-auto-sizer'
 
 /**
- * The main explore component for KalDB, using the new Grafana scenes implementation.
+ * The main explore component for Astra, using the new Grafana scenes implementation.
  *
  * @see {@link https://grafana.github.io/scenes/ | Grafana scenes documentation}
  * @see {@link https://developers.grafana.com/ui/latest/index.html?path=/story/docs-overview-intro--page | Grafana UI documentation}
@@ -53,7 +53,7 @@ import AutoSizer from 'react-virtualized-auto-sizer'
 
 const dataSourceVariable = new DataSourceVariable({
   name: 'datasource',
-  pluginId: 'slack-kaldb-app-backend-datasource',
+  pluginId: 'slack-astra-app-backend-datasource',
   hide: VariableHide.hideVariable,
 });
 
@@ -79,7 +79,7 @@ interface FieldStatsState extends SceneObjectState {
 
 interface LogsState extends SceneObjectState {
   logs: Log[];
-  timestamps: number[];
+  timestamps: string[];
   loading: boolean;
   totalCount: number;
   totalFailed: number;
@@ -144,12 +144,12 @@ class ResultStats extends SceneObjectBase<ResultsStatsState> {
   }
 }
 
-interface KaldbQueryState extends SceneObjectState {
+interface AstraQueryState extends SceneObjectState {
   query: string;
   loading: boolean;
 }
 
-const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
+const AstraQueryRenderer = ({ model }: SceneComponentProps<AstraQuery>) => {
   const { loading } = model.useState();
 
   return (
@@ -185,7 +185,7 @@ const KaldbQueryRenderer = ({ model }: SceneComponentProps<KaldbQuery>) => {
   );
 };
 
-const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[], datasourceUserConfig: DatasourceUserConfig) => {
+const AstraFieldsList = (fields: Field[], topTenMostPopularFields: Field[], datasourceUserConfig: DatasourceUserConfig) => {
   const getIcon = (field: Field): string => {
     if (field.type === 'string') {
       return 'fa fas fa-font';
@@ -341,7 +341,7 @@ const KalDBFieldsList = (fields: Field[], topTenMostPopularFields: Field[], data
   );
 };
 
-const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
+const AstraFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
   const { fields, topTenMostPopularFields, visible, loading, datasourceUserConfig } = model.useState();
 
   const getFoldIcon = () => {
@@ -377,7 +377,7 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
 
             <Counter value={fields.length} />
           </div>
-          {visible ? KalDBFieldsList(fields, topTenMostPopularFields, datasourceUserConfig) : null}
+          {visible ? AstraFieldsList(fields, topTenMostPopularFields, datasourceUserConfig) : null}
         </div>
       )}
     </>
@@ -385,7 +385,7 @@ const KalDBFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
 };
 
 class FieldStats extends SceneObjectBase<FieldStatsState> {
-  static Component = KalDBFieldsRenderer;
+  static Component = AstraFieldsRenderer;
   constructor(state?: Partial<FieldStatsState>) {
     super({
       fields: [],
@@ -427,7 +427,7 @@ class FieldStats extends SceneObjectBase<FieldStatsState> {
   };
 }
 
-const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
+const AstraLogsRenderer = ({ model }: SceneComponentProps<AstraLogs>) => {
   const { logs, loading, timestamps, datasourceUserConfig } = model.useState();
 
   // TODO: This should be whatever the user set
@@ -475,8 +475,8 @@ const KalDBLogsRenderer = ({ model }: SceneComponentProps<KalDBLogs>) => {
   );
 }
 
-class KalDBLogs extends SceneObjectBase<LogsState> {
-  static Component = KalDBLogsRenderer;
+class AstraLogs extends SceneObjectBase<LogsState> {
+  static Component = AstraLogsRenderer;
   constructor(state?: Partial<LogsState>) {
     super({
       logs: [],
@@ -495,7 +495,7 @@ class KalDBLogs extends SceneObjectBase<LogsState> {
     });
   }
 
-  setTimestamps = (timestamps: number[]) => {
+  setTimestamps = (timestamps: string[]) => {
     this.setState({
       timestamps: timestamps,
     });
@@ -529,10 +529,10 @@ class KalDBLogs extends SceneObjectBase<LogsState> {
 
 
 
-class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
-  static Component = KaldbQueryRenderer;
+class AstraQuery extends SceneObjectBase<AstraQueryState> {
+  static Component = AstraQueryRenderer;
 
-  constructor(state?: Partial<KaldbQueryState>) {
+  constructor(state?: Partial<AstraQueryState>) {
     super({
       query: '',
       loading: false,
@@ -594,9 +594,9 @@ class KaldbQuery extends SceneObjectBase<KaldbQueryState> {
 
 const histogramNodeStats = new NodeStats();
 const resultsCounter = new ResultStats();
-const queryComponent = new KaldbQuery();
+const queryComponent = new AstraQuery();
 const fieldComponent = new FieldStats();
-const logsComponent = new KalDBLogs(); 
+const logsComponent = new AstraLogs();
 
 const getExploreScene = () => {
   return new EmbeddedScene({
@@ -692,18 +692,28 @@ const getExploreScene = () => {
 };
 
 /**
- * Parse the log data returned from KalDB and extract the relevant information
+ * Parse the log data returned from Astra and extract the relevant information
  * to our various SceneObject's
  */
 const parseAndExtractLogData = (data: DataFrame[]) => {
+  logsComponent.setTotalCount(-1);
+  logsComponent.setTotalFailed(-1);
+  fieldComponent.setFields([]);
+  fieldComponent.setTopTenMostPopularFields([]);
+  logsComponent.setLogs([]);
+  logsComponent.setTimestamps([]);
+
   // Set log count
-  if (data.length > 0 && data[0].meta['shards']) {
+  if (data.length === 2 && data[0].meta['shards']) {
     logsComponent.setTotalCount(data[0].meta['shards'].total);
+    logsComponent.setTotalFailed(data[0].meta['shards'].failed);
+  } else if (data.length > 0 && data[0].meta['shards']) {
+    logsComponent.setTotalCount(0);
     logsComponent.setTotalFailed(data[0].meta['shards'].failed);
   }
 
   // Set field names, the most popular fields, and calculates the frequency of the most common values
-  if (data.length > 0 && data[0].fields.length > 0) {
+  if (data.length === 2 && data[0].fields.length > 0) {
     const currentDataSource = dataSourceVariable
       ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
       .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
@@ -729,7 +739,7 @@ const parseAndExtractLogData = (data: DataFrame[]) => {
 
     let mappedFields: Map<string, Field> = new Map<string, Field>();
     let reconstructedLogs: Log[] = [...Array(data[0].length)];
-    let timestamps: number[] = [];
+    let timestamps: string[] = [];
 
     for (let unmappedField of data[0].fields) {
       // TODO: Ignore the logMessageField (e.g. _source) for now. We'll likely need to revisit this
@@ -870,7 +880,8 @@ const histogramPanel = PanelBuilders.timeseries()
 const histogramResultTransformation: CustomTransformOperator = () => (source: Observable<DataFrame[]>) => {
   return source.pipe(
     map((data: DataFrame[]) => {
-      if (data.length > 0 && data[0].meta['shards']) {
+      resultsCounter.setResults(-1);
+      if (data.length === 2 && data[0].meta['shards']) {
         let counter = 0;
 
         // In Grafana 9, the values live in `values['buffer']`.
@@ -906,7 +917,7 @@ const explorePage = new SceneAppPage({
     from: 'now-15m',
     to: 'now',
   }),
-  url: '/a/slack-kaldb-app',
+  url: '/a/slack-astra-app',
   getScene: getExploreScene,
 });
 

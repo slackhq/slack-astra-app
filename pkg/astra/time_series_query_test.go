@@ -1,4 +1,4 @@
-package kaldb
+package astra
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	es "github.com/slackhq/slack-kaldb-app/pkg/kaldb/client"
 	"github.com/grafana/opensearch-datasource/pkg/tsdb"
+	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

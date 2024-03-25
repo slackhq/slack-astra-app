@@ -1,12 +1,12 @@
 import { DataSourceSettings, SelectableValue } from '@grafana/data';
 import { valid } from 'semver';
 import { Flavor, OpenSearchOptions } from '../types';
-import { defaultMaxConcurrentShardRequests } from './KalDbDetails';
+import { defaultMaxConcurrentShardRequests } from './AstraDetails';
 
 export const coerceOptions = (
   options: DataSourceSettings<OpenSearchOptions, {}>
 ): DataSourceSettings<OpenSearchOptions, {}> => {
-  const flavor = options.jsonData.flavor || Flavor.KalDB;
+  const flavor = options.jsonData.flavor || Flavor.Astra;
   const version =
     valid(options.jsonData.version) ||
     AVAILABLE_VERSIONS.find(v => v.value.flavor === flavor)?.value.version ||
@@ -16,7 +16,8 @@ export const coerceOptions = (
     ...options,
     jsonData: {
       ...options.jsonData,
-      timeField: options.jsonData.timeField || '@timestamp',
+      database: options.jsonData.database || '_all',
+      timeField: options.jsonData.timeField || '_timesinceepoch',
       version,
       flavor,
       maxConcurrentShardRequests:
@@ -53,16 +54,16 @@ interface Version {
 
 export const AVAILABLE_VERSIONS: Array<SelectableValue<Version>> = [
   {
-    label: 'KalDB 0.0.x',
+    label: 'Astra 0.0.1-alpha',
     value: {
-      flavor: Flavor.KalDB,
+      flavor: Flavor.Astra,
       version: '0.0.1',
     },
   },
 ];
 
 export const AVAILABLE_FLAVORS: Array<SelectableValue<string>> = [
-  { label: 'KalDB', value: Flavor.KalDB },
+  { label: 'Astra', value: Flavor.Astra },
   { label: 'OpenSearch', value: Flavor.OpenSearch },
   { label: 'ElasticSearch', value: Flavor.Elasticsearch },
 ];

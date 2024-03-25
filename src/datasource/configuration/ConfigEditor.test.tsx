@@ -2,7 +2,7 @@ import React from 'react';
 import { mount, shallow } from 'enzyme';
 import { ConfigEditor } from './ConfigEditor';
 import { DataSourceHttpSettings } from '@grafana/ui';
-import { KalDbDetails } from './KalDbDetails';
+import { AstraDetails } from './AstraDetails';
 import { LogsConfig } from './LogsConfig';
 import { createDefaultConfigOptions } from './mocks';
 import { render } from '@testing-library/react';
@@ -15,7 +15,7 @@ describe('ConfigEditor', () => {
   it('should render all parts of the config', () => {
     const wrapper = shallow(<ConfigEditor onOptionsChange={() => {}} options={createDefaultConfigOptions()} />);
     expect(wrapper.find(DataSourceHttpSettings).length).toBe(1);
-    expect(wrapper.find(KalDbDetails).length).toBe(1);
+    expect(wrapper.find(AstraDetails).length).toBe(1);
     expect(wrapper.find(LogsConfig).length).toBe(1);
   });
 
@@ -31,9 +31,9 @@ describe('ConfigEditor', () => {
     render(
       <ConfigEditor
         onOptionsChange={options => {
-          expect(options.jsonData.flavor).toBe('kaldb');
+          expect(options.jsonData.flavor).toBe('astra');
           expect(options.jsonData.version).toBe('0.0.1');
-          expect(options.jsonData.timeField).toBe('@timestamp');
+          expect(options.jsonData.timeField).toBe('_timesinceepoch');
         }}
         options={options}
       />
