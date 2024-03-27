@@ -22,7 +22,7 @@ import {
   TextBoxVariable,
   VariableValueSelectors,
 } from '@grafana/scenes';
-import { AppRootProps, DataFrame } from '@grafana/data';
+import { AppRootProps, DataFrame, FieldType } from "@grafana/data";
 import {
   Button,
   DrawStyle,
@@ -187,35 +187,22 @@ const AstraQueryRenderer = ({ model }: SceneComponentProps<AstraQuery>) => {
 
 const AstraFieldsList = (fields: Field[], topTenMostPopularFields: Field[], datasourceUserConfig: DatasourceUserConfig) => {
   const getIcon = (field: Field): string => {
-    if (field.type === 'string') {
+    // todo - since these all come back as string currently, return
+    return 'fa fas fa-circle';
+
+    if (field.type === FieldType.string) {
       return 'fa fas fa-font';
     }
 
-    if (field.type === 'text') {
-      return 'fa fas fa-font';
-    }
-
-    if (field.type === 'integer') {
+    if (field.type === FieldType.number) {
       return 'fa fas fa-hashtag';
     }
 
-    if (field.type === 'float') {
-      return 'fa fas fa-hashtag';
+    if (field.type === FieldType.boolean) {
+      return 'fa fas fa-lightbulb-o';
     }
 
-    if (field.type === 'double') {
-      return 'fa fas fa-hashtag';
-    }
-
-    if (field.type === 'long') {
-      return 'fa fas fa-hashtag';
-    }
-
-    if (field.type === 'boolean') {
-      return 'fa fas fa-lightbulb';
-    }
-
-    if (field.type === 'time') {
+    if (field.type === FieldType.time) {
       return 'fa far fa-calendar';
     }
 
@@ -283,16 +270,15 @@ const AstraFieldsList = (fields: Field[], topTenMostPopularFields: Field[], data
           queryComponent.appendToQuery(`NOT ${field.name}: ${value}`)
         }
       >
-        <div style={{backgroundColor: fieldBackgroundColor, display: 'flex', flexDirection: 'row', paddingLeft: '15px', alignItems: 'center', gap: '10px'}}>
-            <i className={getIcon(field)} title={getTitle(field)} style={{ paddingTop: '12px' }}></i>
-            <span
+        <div style={{backgroundColor: fieldBackgroundColor, display: 'flex', flex: '1', flexDirection: 'row', paddingLeft: '15px', alignItems: 'center', height: '30px', gap: '10px'}}>
+            <i className={getIcon(field)} title={getTitle(field)} style={{}}></i>
+            <div
               style={{
-                paddingTop: '10px',
                 fontFamily: 'monospace',
               }}
             >
               {field.name}
-            </span>
+            </div>
         </div>
       </FieldValueFrequency>
     </div>);
@@ -300,7 +286,7 @@ const AstraFieldsList = (fields: Field[], topTenMostPopularFields: Field[], data
 
 
   return (
-    <div style={{width: '100%', height: '100%'}}>
+    <div style={{width: '100%', height: '100%', overflow: 'hidden'}}>
       <AutoSizer>
         {
           ({height, width}) => {
@@ -375,7 +361,7 @@ const AstraFieldsRenderer = ({ model }: SceneComponentProps<FieldStats>) => {
               </span>
             </div>
 
-            <Counter value={fields.length} />
+            <Counter value={fields.length + topTenMostPopularFields.length} />
           </div>
           {visible ? AstraFieldsList(fields, topTenMostPopularFields, datasourceUserConfig) : null}
         </div>

@@ -158,22 +158,23 @@ const DocumentCell = (log: Log, style: any, rowIndex: number, expanded: boolean,
                 fontFamily: 'monospace',
                 fontSize: '12px',
                 overflow: 'hidden',
-                paddingTop: '10px',
+                paddingTop: '5px',
                 ...style
             }}
     >
-        <div style={{maxHeight: '115px', overflow: 'hidden'}}>
-            {
-                Array.from(log.keys()).map((key) => (
-                    key !== logMessageField ?
+        <div style={{maxHeight: '115px', overflow: 'hidden', overflowWrap: 'anywhere'}}>
+
+                {
+                    Array.from(log.keys()).map((key) => (
+                      key !== logMessageField ?
                         <LogKeyVal
-                            field={key}
-                            val={log.get(key)}
-                            key={key}
+                          field={key}
+                          val={log.get(key)}
+                          key={key}
                         />
-                    : <></>
-                ))
-            }
+                        : <></>
+                    ))
+                }
         </div>
         {
             expanded ?
@@ -224,7 +225,7 @@ const TimestampCell = (timestamp: string, style: any, rowIndex: number, expanded
                 />
             </div>
             <>
-                {dateTimeParse(timestamp, {timeZone: getTimeZone()}).format("YYYY-MM-DD @ HH:mm:ss:SSS Z").toString()}
+                {dateTimeParse(new Date(timestamp), {timeZone: getTimeZone()}).format("YYYY-MM-DD @ HH:mm:ss:SSS Z").toString()}
             </>
         </div>
     );
