@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.1
+### New features
+* N/A
+
+### Breaking changes
+* N/A
+
+### Bugs squashed
+* Resolved a date timezone formatting issue where dates were incorrectly rendered on explore page
+* Disabled field type icon as this was rendering incorrect types
+* Addressed some text alignment and overflow bugs
+* Fixed available field count not including top fields
+
 ## 0.6.0
 ### New features
 * N/A
