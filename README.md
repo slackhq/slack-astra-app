@@ -15,4 +15,4 @@ appear in the navigation under Apps.
 
 ## Other resources
 * [Getting started with development](.github/CONTRIBUTING.md#getting-started-with-development)
-* [Astra documentation](https://slackhq.github.io/astra/)
+* [Astra documentation](https://slackhq.github.io/astra/overview.html)
