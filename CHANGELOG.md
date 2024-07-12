@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.2
+### New features
+* N/A
+
+### Breaking changes
+* N/A
+
+### Bugs squashed
+* Swapped the default query to be `*:*` instead of `*`. This was resulting in
+a failure to load logs when using newer querying paths
+
 ## 0.6.1
 ### New features
 * N/A
