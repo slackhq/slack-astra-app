@@ -309,8 +309,8 @@ export class OpenSearchDatasource extends DataSourceApi<OpenSearchQuery, OpenSea
   }
 
   private interpolateLuceneQuery(queryString: string, scopedVars: ScopedVars) {
-    // Lucene Lucene queryString should always be '*' if empty string
-    return getTemplateSrv().replace(queryString, scopedVars, 'lucene') || '*';
+    // Lucene Lucene queryString should always be '*:*' if empty string
+    return getTemplateSrv().replace(queryString, scopedVars, 'lucene') || '*:*';
   }
 
   private interpolatePPLQuery(queryString: string, scopedVars: ScopedVars) {
@@ -568,9 +568,9 @@ export class OpenSearchDatasource extends DataSourceApi<OpenSearchQuery, OpenSea
     // @ts-ignore
     // add global adhoc filters to timeFilter
     const adhocFilters = getTemplateSrv().getAdhocFilters(this.name);
-    // Lucene queryString should always be '*' if empty string
+    // Lucene queryString should always be '*:*' if empty string
     if (!queryString || queryString === '') {
-      queryString = '*';
+      queryString = '*:*';
     }
 
     let queryObj;
