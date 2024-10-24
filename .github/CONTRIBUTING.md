@@ -119,11 +119,10 @@ Astra datasource URL inside your Grafana instance.
    mage -v
    ```
 
-3. List all available Mage targets for additional commands:
-
-   ```bash
-   mage -l
-   ```
+3. Move the binaries into the target directory
+```bash
+mv dist/gpx_slack_astra_app_datasource_backend_* dist/datasource
+```
 
 ### Releases
 
