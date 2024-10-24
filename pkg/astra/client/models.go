@@ -80,7 +80,7 @@ type SearchResponse struct {
 	Error        map[string]interface{} `json:"error"`
 	Aggregations map[string]interface{} `json:"aggregations"`
 	Hits         *SearchResponseHits    `json:"hits"`
-	Shards		map[string]interface{}  `json:"_shards"`
+	Shards       map[string]interface{} `json:"_shards"`
 }
 
 // MultiSearchRequest represents a multi search request
@@ -271,8 +271,8 @@ type TermsAggregation struct {
 
 // ExtendedBounds represents extended bounds
 type ExtendedBounds struct {
-	Min string `json:"min"`
-	Max string `json:"max"`
+	Min int64 `json:"min"`
+	Max int64 `json:"max"`
 }
 
 // GeoHashGridAggregation represents a geo hash grid aggregation

@@ -15,8 +15,10 @@ import (
 func TestExecuteTimeSeriesQuery(t *testing.T) {
 	from := time.Date(2018, 5, 15, 17, 50, 0, 0, time.UTC)
 	to := time.Date(2018, 5, 15, 17, 55, 0, 0, time.UTC)
-	fromStr := fmt.Sprintf("%d", from.UnixNano()/int64(time.Millisecond))
-	toStr := fmt.Sprintf("%d", to.UnixNano()/int64(time.Millisecond))
+	fromMs := from.UnixNano() / int64(time.Millisecond)
+	toMs := to.UnixNano() / int64(time.Millisecond)
+	fromStr := fmt.Sprintf("%d", fromMs)
+	toStr := fmt.Sprintf("%d", toMs)
 
 	Convey("Test execute time series query", t, func() {
 		Convey("With defaults on Elasticsearch 2.0.0", func() {
@@ -36,8 +38,8 @@ func TestExecuteTimeSeriesQuery(t *testing.T) {
 			So(sr.Aggs[0].Key, ShouldEqual, "2")
 			dateHistogramAgg := sr.Aggs[0].Aggregation.Aggregation.(*es.DateHistogramAgg)
 			So(dateHistogramAgg.Field, ShouldEqual, "@timestamp")
-			So(dateHistogramAgg.ExtendedBounds.Min, ShouldEqual, fromStr)
-			So(dateHistogramAgg.ExtendedBounds.Max, ShouldEqual, toStr)
+			So(dateHistogramAgg.ExtendedBounds.Min, ShouldEqual, fromMs)
+			So(dateHistogramAgg.ExtendedBounds.Max, ShouldEqual, toMs)
 		})
 
 		Convey("With defaults on Elasticsearch 5.0.0", func() {
@@ -51,8 +53,8 @@ func TestExecuteTimeSeriesQuery(t *testing.T) {
 			sr := c.multisearchRequests[0].Requests[0]
 			So(sr.Query.Bool.Filters[0].(*es.RangeFilter).Key, ShouldEqual, c.timeField)
 			So(sr.Aggs[0].Key, ShouldEqual, "2")
-			So(sr.Aggs[0].Aggregation.Aggregation.(*es.DateHistogramAgg).ExtendedBounds.Min, ShouldEqual, fromStr)
-			So(sr.Aggs[0].Aggregation.Aggregation.(*es.DateHistogramAgg).ExtendedBounds.Max, ShouldEqual, toStr)
+			So(sr.Aggs[0].Aggregation.Aggregation.(*es.DateHistogramAgg).ExtendedBounds.Min, ShouldEqual, fromMs)
+			So(sr.Aggs[0].Aggregation.Aggregation.(*es.DateHistogramAgg).ExtendedBounds.Max, ShouldEqual, toMs)
 		})
 
 		Convey("With multiple bucket aggs", func() {
