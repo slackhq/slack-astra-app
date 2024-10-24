@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.3
+### New features
+* N/A
+
+### Breaking changes
+* N/A
+
+### Bugs squashed
+* Swapped the type epoch_millis in intervals for date histograms to be integers,
+rather than strings. This was causing alerts to fail when using `_timesinceepoch`
+
 ## 0.6.2
 ### New features
 * N/A
