@@ -21,3 +21,6 @@ services:
       GF_PATHS_PLUGINS: "/var/lib/grafana/plugins"
       GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: "slack-astra-app,slack-astra-app-backend-datasource"
       GF_SERVER_ENABLE_GZIP: "true"
+      GF_UNIFIED_ALERTING_ENABLED: "false"
+      GF_ALERTING_ENABLED: "true"
+      GF_DATABASE_WAL: "true"

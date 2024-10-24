@@ -16,6 +16,8 @@ type AstraExecutor struct{}
 
 var (
 	intervalCalculator tsdb.IntervalCalculator
+	_                  backend.QueryDataHandler   = (*AstraDatasource)(nil)
+	_                  backend.CheckHealthHandler = (*AstraDatasource)(nil)
 )
 
 type TsdbQueryEndpoint interface {
