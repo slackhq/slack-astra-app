@@ -601,7 +601,7 @@ const getExploreScene = () => {
                   width: '100%',
                   body: new SceneReactObject({
                     reactNode: <Alert title="Deprecation notice - August 2025" severity="warning">
-                      This UI has been deprecated, and will be removed in a future release. Please use the native Grafana <a href={"/explore"} style={{textDecoration: "underline"}}>explorer</a> and selecting the "log" type from the datasource.
+                      This UI has been deprecated, and will be removed in a future release. Please use the native Grafana <a href={"/explore"} style={{textDecoration: "underline"}}>explorer</a> and selecting the &quot;log&quot; type from the datasource.
                     </Alert>,
                   }),
                 })
