@@ -24,6 +24,7 @@ import {
 } from '@grafana/scenes';
 import { AppRootProps, DataFrame, FieldType } from "@grafana/data";
 import {
+  Alert,
   Button,
   DrawStyle,
   IconButton,
@@ -592,6 +593,20 @@ const getExploreScene = () => {
     body: new SceneFlexLayout({
       direction: 'column',
       children: [
+        new SceneFlexLayout({
+          height: 115,
+          direction: 'row',
+          children: [
+                new SceneFlexItem({
+                  width: '100%',
+                  body: new SceneReactObject({
+                    reactNode: <Alert title="Deprecation notice - August 2025" severity="warning">
+                      This UI has been deprecated, and will be removed in a future release. Please use the native Grafana <a href={"/explore"} style={{textDecoration: "underline"}}>explorer</a> and selecting the "log" type from the datasource.
+                    </Alert>,
+                  }),
+                })
+              ]
+            }),
         new SceneFlexLayout({
           height: 35,
           direction: 'row',
