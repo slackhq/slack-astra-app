@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.4
+### New features
+* Deprecation warning added to Astra Explore page
+
+### Breaking changes
+ * N/A
+
+### Bugs squashed
+* N/A
+
 ## 0.6.3
 ### New features
 * N/A
