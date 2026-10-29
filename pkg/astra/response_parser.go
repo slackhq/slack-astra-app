@@ -12,10 +12,10 @@ import (
 	simplejson "github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/opensearch-datasource/pkg/null"
-	"github.com/grafana/opensearch-datasource/pkg/tsdb"
-	"github.com/grafana/opensearch-datasource/pkg/utils"
 	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
+	"github.com/slackhq/slack-astra-app/pkg/null"
+	"github.com/slackhq/slack-astra-app/pkg/tsdb"
+	"github.com/slackhq/slack-astra-app/pkg/utils"
 )
 
 const (

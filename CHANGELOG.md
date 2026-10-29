@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.5
+### New features
+* N/A
+
+### Breaking changes
+* Building the backend requires Go >= 1.26.5
+
+### Bugs squashed
+* Removed the deprecation warning from the Astra Explore page
+* Backend security updates: built with Go 1.27, grafana-plugin-sdk-go v0.298.0,
+grpc v1.85.0 and golang.org/x/net v0.62.0, and no longer depends on
+github.com/grafana/grafana v6 (helpers from grafana/opensearch-datasource are
+now vendored under pkg/)
+
 ## 0.6.4
 ### New features
 * Deprecation warning added to Astra Explore page

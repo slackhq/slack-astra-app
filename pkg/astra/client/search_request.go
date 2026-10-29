@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/grafana/opensearch-datasource/pkg/tsdb"
+	"github.com/slackhq/slack-astra-app/pkg/tsdb"
 )
 
 // SearchRequestBuilder represents a builder which can build a search request

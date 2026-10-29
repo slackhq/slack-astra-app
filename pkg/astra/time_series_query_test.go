@@ -7,8 +7,8 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/opensearch-datasource/pkg/tsdb"
 	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
+	"github.com/slackhq/slack-astra-app/pkg/tsdb"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
