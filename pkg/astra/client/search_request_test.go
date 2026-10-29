@@ -7,7 +7,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	simplejson "github.com/bitly/go-simplejson"
-	"github.com/grafana/opensearch-datasource/pkg/tsdb"
+	"github.com/slackhq/slack-astra-app/pkg/tsdb"
 
 	. "github.com/smartystreets/goconvey/convey"
 )

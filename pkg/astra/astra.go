@@ -7,8 +7,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/opensearch-datasource/pkg/tsdb"
 	es "github.com/slackhq/slack-astra-app/pkg/astra/client"
+	"github.com/slackhq/slack-astra-app/pkg/tsdb"
 )
 
 // AstraExecutor represents a handler for handling Astra datasource request
@@ -28,7 +28,7 @@ type AstraDatasource struct {
 	dsInfo *backend.DataSourceInstanceSettings
 }
 
-func NewAstraDatasource(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+func NewAstraDatasource(_ context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 	log.DefaultLogger.Debug("Initializing new data source instance")
 
 	return &AstraDatasource{

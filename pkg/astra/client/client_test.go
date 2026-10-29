@@ -20,8 +20,8 @@ import (
 
 	"github.com/bitly/go-simplejson"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/opensearch-datasource/pkg/tsdb"
-	"github.com/grafana/opensearch-datasource/pkg/utils"
+	"github.com/slackhq/slack-astra-app/pkg/tsdb"
+	"github.com/slackhq/slack-astra-app/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -264,7 +264,7 @@ func httpClientScenario(t *testing.T, desc string, ds *backend.DataSourceInstanc
 
 		currentNewDatasourceHttpClient := newDatasourceHttpClient
 
-		newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
+		newDatasourceHttpClient = func(ctx context.Context, ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
 			return ts.Client(), nil
 		}
 
@@ -325,7 +325,7 @@ func Test_TLS_config_included_in_client_passed_from_decrypted_json_data(t *testi
 	require.NoError(t, err)
 
 	// verify that newDatasourceHttpClient, when provided the client's JSON data from the config editor, is able to authenticate with the test server mutually
-	client, err := newDatasourceHttpClient(&backend.DataSourceInstanceSettings{
+	client, err := newDatasourceHttpClient(context.Background(), &backend.DataSourceInstanceSettings{
 		JSONData: jsonEncoding.RawMessage(`{"tlsAuth":true, "tlsAuthWithCACert":true}`),
 		DecryptedSecureJSONData: map[string]string{
 			"tlsCACert":     caPEM.String(),

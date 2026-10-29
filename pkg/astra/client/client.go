@@ -19,7 +19,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/opensearch-datasource/pkg/tsdb"
+	"github.com/slackhq/slack-astra-app/pkg/tsdb"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -27,7 +27,7 @@ var (
 	clientLog = log.New()
 )
 
-var newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
+var newDatasourceHttpClient = func(ctx context.Context, ds *backend.DataSourceInstanceSettings) (*http.Client, error) {
 	jsonData := map[string]interface{}{}
 	err := json.Unmarshal(ds.JSONData, &jsonData)
 	if err != nil {
@@ -35,7 +35,7 @@ var newDatasourceHttpClient = func(ds *backend.DataSourceInstanceSettings) (*htt
 	}
 
 	httpClientProvider := httpclient.NewProvider()
-	httpClientOptions, err := ds.HTTPClientOptions()
+	httpClientOptions, err := ds.HTTPClientOptions(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HTTP client options: %w", err)
 	}
@@ -249,12 +249,12 @@ func (c *baseClientImpl) executeRequest(method, uriPath, uriQuery string, body [
 	req.Header.Set("User-Agent", "Grafana")
 	req.Header.Set("Content-Type", "application/json")
 
-	dsHttpOpts, err := c.ds.HTTPClientOptions()
+	dsHttpOpts, err := c.ds.HTTPClientOptions(c.ctx)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range dsHttpOpts.Headers {
-		req.Header.Set(k, v)
+	for k, v := range dsHttpOpts.Header {
+		req.Header[k] = v
 	}
 
 	secureJsonData := c.ds.DecryptedSecureJSONData
@@ -275,7 +275,7 @@ func (c *baseClientImpl) executeRequest(method, uriPath, uriQuery string, body [
 		req.Header.Set("x-amz-content-sha256", fmt.Sprintf("%x", sha256.Sum256(body)))
 	}
 
-	httpClient, err := newDatasourceHttpClient(c.ds)
+	httpClient, err := newDatasourceHttpClient(c.ctx, c.ds)
 	if err != nil {
 		return nil, err
 	}
@@ -476,12 +476,12 @@ func (c *baseClientImpl) executePPLQueryRequest(method, uriPath string, body []b
 
 	req.Header.Set("User-Agent", "Grafana")
 	req.Header.Set("Content-Type", "application/json")
-	dsHttpOpts, err := c.ds.HTTPClientOptions()
+	dsHttpOpts, err := c.ds.HTTPClientOptions(c.ctx)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range dsHttpOpts.Headers {
-		req.Header.Set(k, v)
+	for k, v := range dsHttpOpts.Header {
+		req.Header[k] = v
 	}
 
 	secureJsonData := c.ds.DecryptedSecureJSONData
@@ -498,7 +498,7 @@ func (c *baseClientImpl) executePPLQueryRequest(method, uriPath string, body []b
 		req.SetBasicAuth(c.ds.User, password)
 	}
 
-	httpClient, err := newDatasourceHttpClient(c.ds)
+	httpClient, err := newDatasourceHttpClient(c.ctx, c.ds)
 	if err != nil {
 		return nil, err
 	}
