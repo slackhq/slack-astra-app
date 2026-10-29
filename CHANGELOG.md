@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.7.0
+### New features
+* Frontend rebuilt on @grafana/scenes 6.53 and React 18, so it loads on
+Grafana 11.6 through 13
+
+### Breaking changes
+* Requires Grafana >= 11.6.0 (use 0.6.5 on Grafana 10.4)
+* Building requires Node >= 20
+
+### Bugs squashed
+* N/A
+
 ## 0.6.5
 ### New features
 * N/A
