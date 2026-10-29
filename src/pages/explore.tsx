@@ -5,8 +5,6 @@ import {
   DataSourceVariable,
   EmbeddedScene,
   PanelBuilders,
-  SceneApp,
-  SceneAppPage,
   SceneComponentProps,
   SceneDataTransformer,
   SceneFlexItem,
@@ -22,7 +20,8 @@ import {
   TextBoxVariable,
   VariableValueSelectors,
 } from '@grafana/scenes';
-import { AppRootProps, DataFrame, FieldType } from "@grafana/data";
+import { AppRootProps, DataFrame, DataSourceInstanceSettings, FieldType } from "@grafana/data";
+import { PluginPage, getDataSourceSrv } from '@grafana/runtime';
 import {
   Button,
   DrawStyle,
@@ -37,7 +36,7 @@ import {
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { VariableHide } from '@grafana/schema';
-import { Field, Log, DatasourceUserConfig } from 'datasource/types';
+import { Field, Log, DatasourceUserConfig, OpenSearchOptions } from 'datasource/types';
 import FieldValueFrequency from '../datasource/components/FieldValueFrequency';
 import LogsView from 'datasource/components/Logs/LogsView';
 import { FixedSizeList as List } from 'react-window'
@@ -56,6 +55,11 @@ const dataSourceVariable = new DataSourceVariable({
   pluginId: 'slack-astra-app-backend-datasource',
   hide: VariableHide.hideVariable,
 });
+
+// What DataSourceVariable's getDataSourceTypes() returned before scenes removed it:
+// every datasource, not only Astra ones (data links can point elsewhere).
+const getDataSourceList = () =>
+  getDataSourceSrv().getList({ metrics: true, variables: false }) as Array<DataSourceInstanceSettings<OpenSearchOptions>>;
 
 const queryStringVariable = new TextBoxVariable({
   name: 'query',
@@ -418,8 +422,7 @@ const AstraLogsRenderer = ({ model }: SceneComponentProps<AstraLogs>) => {
 
   // TODO: This should be whatever the user set
   const timeField = "_timesinceepoch"
-  const currentDataSource = dataSourceVariable
-    ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
+  const currentDataSource = getDataSourceList()
     .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
 
   let linkedDatasourceUid = '';
@@ -430,8 +433,7 @@ const AstraLogsRenderer = ({ model }: SceneComponentProps<AstraLogs>) => {
   if (currentDataSource && currentDataSource.jsonData.dataLinks?.length > 0) {
     linkedDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
     linkedDatasourceField = currentDataSource.jsonData.dataLinks[0].field;
-    linkedDatasource = dataSourceVariable
-      ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
+    linkedDatasource = getDataSourceList()
       .filter((ele) => ele.uid === linkedDatasourceUid)[0];
 
     // linkedDatasource will be undefined for external links 
@@ -584,8 +586,16 @@ const queryComponent = new AstraQuery();
 const fieldComponent = new FieldStats();
 const logsComponent = new AstraLogs();
 
+// Renders the variable without making it this item's body: that would reparent it
+// away from the SceneVariableSet, which scenes 6 requires as its parent.
+const DataSourcePicker = () => <dataSourceVariable.Component model={dataSourceVariable} />;
+
 const getExploreScene = () => {
   return new EmbeddedScene({
+    $timeRange: new SceneTimeRange({
+      from: 'now-15m',
+      to: 'now',
+    }),
     $variables: new SceneVariableSet({
       variables: [dataSourceVariable, queryStringVariable],
     }),
@@ -636,7 +646,7 @@ const getExploreScene = () => {
                         direction: 'column',
                         children: [
                           new SceneFlexItem({
-                            body: dataSourceVariable,
+                            body: new SceneReactObject({ component: DataSourcePicker }),
                           }),
                         ],
                       }),
@@ -700,8 +710,7 @@ const parseAndExtractLogData = (data: DataFrame[]) => {
 
   // Set field names, the most popular fields, and calculates the frequency of the most common values
   if (data.length === 2 && data[0].fields.length > 0) {
-    const currentDataSource = dataSourceVariable
-      ['getDataSourceTypes']() // This is gross, but we need to access this private property and this is the only real typesafe way to do so in TypeScript
+    const currentDataSource = getDataSourceList()
       .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
 
     let datasourceUserConfig: DatasourceUserConfig = null;
@@ -897,24 +906,16 @@ histogramPanel.setData(
   })
 );
 
-const explorePage = new SceneAppPage({
-  title: 'Explore',
-  $timeRange: new SceneTimeRange({
-    from: 'now-15m',
-    to: 'now',
-  }),
-  url: '/a/slack-astra-app',
-  getScene: getExploreScene,
-});
-
-const getSceneApp = () =>
-  new SceneApp({
-    pages: [explorePage],
-  });
-
+// Rendered directly rather than through SceneApp: SceneApp routes with the
+// react-router version of its scenes release, and Grafana 10.4 (v5) and 12+ (v6)
+// don't share one. This plugin only has the one page.
 const ExploreComponent = () => {
-  const scene = useMemo(() => getSceneApp(), []);
-  return <scene.Component model={scene} />;
+  const scene = useMemo(() => getExploreScene(), []);
+  return (
+    <PluginPage>
+      <scene.Component model={scene} />
+    </PluginPage>
+  );
 };
 
 export const PluginPropsContext = React.createContext<AppRootProps | null>(null);
