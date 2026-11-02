@@ -1,0 +1,6 @@
+apiVersion: 1
+
+apps:
+  - type: slack-astra-app
+    org_id: 1
+    disabled: false

@@ -1,0 +1,30 @@
+apiVersion: 1
+
+datasources:
+  - name: Astra A
+    uid: astra-a
+    type: slack-astra-app-backend-datasource
+    url: http://host.docker.internal:9201/a
+    isDefault: true
+    jsonData: &astra
+      database: testindex
+      timeField: _timesinceepoch
+      logMessageField: _source
+      flavor: opensearch
+      version: 1.0.0
+      dataLinks:
+        - field: trace_id
+          datasourceUid: linked-alertmanager
+  - name: Astra B
+    uid: astra-b
+    type: slack-astra-app-backend-datasource
+    url: http://host.docker.internal:9201/b
+    jsonData: *astra
+  # Data link target. Alertmanager is the only core datasource without metrics
+  # support, which the link lookup must not depend on.
+  - name: Linked Alertmanager
+    uid: linked-alertmanager
+    type: alertmanager
+    url: http://host.docker.internal:9201/alertmanager
+    jsonData:
+      implementation: prometheus
