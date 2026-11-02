@@ -47,6 +47,7 @@ const config = async (env): Promise<Configuration> => ({
     'slate-plain-serializer',
     '@grafana/slate-react',
     'react',
+    'react/jsx-runtime',
     'react-dom',
     'react-redux',
     'redux',
