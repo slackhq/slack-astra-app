@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 
 import {
   CustomTransformOperator,
@@ -18,6 +18,7 @@ import {
   SceneTimeRange,
   SceneVariableSet,
   TextBoxVariable,
+  UrlSyncContextProvider,
   VariableValueSelectors,
 } from '@grafana/scenes';
 import { AppRootProps, DataFrame, DataSourceInstanceSettings, FieldType } from "@grafana/data";
@@ -588,8 +589,12 @@ const logsComponent = new AstraLogs();
 // away from the SceneVariableSet, which scenes 6 requires as its parent.
 const DataSourcePicker = () => <dataSourceVariable.Component model={dataSourceVariable} />;
 
+// Built once: the scene objects above are module singletons, and scenes 6 rejects
+// reparenting them into a fresh scene on each mount.
+let exploreScene: EmbeddedScene | undefined;
+
 const getExploreScene = () => {
-  return new EmbeddedScene({
+  exploreScene ??= new EmbeddedScene({
     $timeRange: new SceneTimeRange({
       from: 'now-15m',
       to: 'now',
@@ -683,6 +688,7 @@ const getExploreScene = () => {
     }),
     controls: [new VariableValueSelectors({})],
   });
+  return exploreScene;
 };
 
 /**
@@ -904,13 +910,16 @@ histogramPanel.setData(
 );
 
 // Rendered directly rather than through SceneApp: SceneApp routes with the
-// react-router version of its scenes release, and Grafana 10.4 (v5) and 12+ (v6)
-// don't share one. This plugin only has the one page.
+// react-router version of its scenes release, and Grafana 11.x (v5) and 12+ (v6)
+// don't share one. This plugin only has the one page. UrlSyncContextProvider only
+// needs useLocation, which both versions provide.
 const ExploreComponent = () => {
-  const scene = useMemo(() => getExploreScene(), []);
+  const scene = getExploreScene();
   return (
     <PluginPage>
-      <scene.Component model={scene} />
+      <UrlSyncContextProvider scene={scene} updateUrlOnInit={true} createBrowserHistorySteps={true}>
+        <scene.Component model={scene} />
+      </UrlSyncContextProvider>
     </PluginPage>
   );
 };
