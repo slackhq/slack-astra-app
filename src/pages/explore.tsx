@@ -56,10 +56,10 @@ const dataSourceVariable = new DataSourceVariable({
   hide: VariableHide.hideVariable,
 });
 
-// What DataSourceVariable's getDataSourceTypes() returned before scenes removed it:
-// every datasource, not only Astra ones (data links can point elsewhere).
-const getDataSourceList = () =>
-  getDataSourceSrv().getList({ metrics: true, variables: false }) as Array<DataSourceInstanceSettings<OpenSearchOptions>>;
+const getCurrentDataSource = () =>
+  getDataSourceSrv().getInstanceSettings(dataSourceVariable.getValue().toString()) as
+    | DataSourceInstanceSettings<OpenSearchOptions>
+    | undefined;
 
 const queryStringVariable = new TextBoxVariable({
   name: 'query',
@@ -422,8 +422,7 @@ const AstraLogsRenderer = ({ model }: SceneComponentProps<AstraLogs>) => {
 
   // TODO: This should be whatever the user set
   const timeField = "_timesinceepoch"
-  const currentDataSource = getDataSourceList()
-    .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
+  const currentDataSource = getCurrentDataSource();
 
   let linkedDatasourceUid = '';
   let linkedDatasource = null;
@@ -433,8 +432,7 @@ const AstraLogsRenderer = ({ model }: SceneComponentProps<AstraLogs>) => {
   if (currentDataSource && currentDataSource.jsonData.dataLinks?.length > 0) {
     linkedDatasourceUid = currentDataSource.jsonData.dataLinks[0].datasourceUid;
     linkedDatasourceField = currentDataSource.jsonData.dataLinks[0].field;
-    linkedDatasource = getDataSourceList()
-      .filter((ele) => ele.uid === linkedDatasourceUid)[0];
+    linkedDatasource = getDataSourceSrv().getInstanceSettings(linkedDatasourceUid);
 
     // linkedDatasource will be undefined for external links 
     if (linkedDatasource) {
@@ -710,8 +708,7 @@ const parseAndExtractLogData = (data: DataFrame[]) => {
 
   // Set field names, the most popular fields, and calculates the frequency of the most common values
   if (data.length === 2 && data[0].fields.length > 0) {
-    const currentDataSource = getDataSourceList()
-      .filter((ele) => ele.name === dataSourceVariable.getValueText())[0];
+    const currentDataSource = getCurrentDataSource();
 
     let datasourceUserConfig: DatasourceUserConfig = null;
 
