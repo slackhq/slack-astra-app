@@ -25,7 +25,7 @@ export const useDescription = (bucketAgg: BucketAggregation): string => {
         description = `${orderLabel} ${size}, `;
       }
 
-      if (minDocCount > 0) {
+      if (Number(minDocCount) > 0) {
         description += `Min Doc Count: ${minDocCount}, `;
       }
 
@@ -52,7 +52,7 @@ export const useDescription = (bucketAgg: BucketAggregation): string => {
       const interval = bucketAgg.settings?.interval || 1000;
       const minDocCount = bucketAgg.settings?.min_doc_count || 1;
 
-      return `Interval: ${interval}${minDocCount > 0 ? `, Min Doc Count: ${minDocCount}` : ''}`;
+      return `Interval: ${interval}${Number(minDocCount) > 0 ? `, Min Doc Count: ${minDocCount}` : ''}`;
     }
 
     case 'filters': {
@@ -72,11 +72,11 @@ export const useDescription = (bucketAgg: BucketAggregation): string => {
 
       let description = `Interval: ${interval}`;
 
-      if (minDocCount > 0) {
+      if (Number(minDocCount) > 0) {
         description += `, Min Doc Count: ${minDocCount}`;
       }
 
-      if (trimEdges > 0) {
+      if (Number(trimEdges) > 0) {
         description += `, Trim edges: ${trimEdges}`;
       }
 
