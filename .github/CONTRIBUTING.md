@@ -124,6 +124,29 @@ Astra datasource URL inside your Grafana instance.
 mv dist/gpx_slack_astra_app_datasource_backend_* dist/datasource
 ```
 
+### End-to-end tests
+
+The e2e suite runs the plugin in a Grafana Docker container and drives the explore page with Playwright. A stub
+Astra server (`e2e/astra-stub.mjs`) answers its queries, so no Astra cluster is needed. CI runs it against every
+Grafana minor release the plugin supports.
+
+1. Build the frontend and backend as above. `dist/datasource` needs the Linux binary for your Docker host's
+   architecture (`mage build:linux` or `mage build:linuxARM64`).
+
+2. Install the browser once:
+
+   ```bash
+   npx playwright install --only-shell chromium
+   ```
+
+3. Run the suite against a Grafana version (any `grafana/grafana-enterprise` image tag):
+
+   ```bash
+   yarn e2e 12.4
+   ```
+
+Failure screenshots, traces and the Grafana log land in `e2e-results/`.
+
 ### Releases
 
 Releases are performed with Github actions, and automatically run when a tag matching the format of `v*.*.*` are

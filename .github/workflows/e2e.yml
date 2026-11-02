@@ -1,0 +1,87 @@
+name: e2e
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    paths:
+      - "src/**"
+      - "pkg/**"
+      - "e2e/**"
+      - ".config/**"
+      - "package.json"
+      - "yarn.lock"
+      - "go.mod"
+      - "go.sum"
+      - "Magefile.go"
+      - ".github/workflows/e2e.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - run: yarn build
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: magefile/mage-action@v3
+        with:
+          version: latest
+          args: build:linux
+
+      - run: mv dist/gpx_slack_astra_app_datasource_backend_* dist/go_plugin_build_manifest dist/datasource/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  grafana:
+    name: grafana ${{ matrix.grafana }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every minor release covered by grafanaDependency in src/plugin.json. Floating
+        # minor tags pick up the latest patch. Add new minors as Grafana releases them.
+        grafana: ["11.6", "12.0", "12.1", "12.2", "12.3", "12.4", "13.0", "13.1", "13.2"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: yarn
+
+      - run: yarn install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      # The artifact upload drops the executable bit.
+      - run: chmod +x dist/datasource/gpx_slack_astra_app_datasource_backend_*
+
+      - run: npx playwright install --with-deps --only-shell chromium
+
+      - run: yarn e2e ${{ matrix.grafana }}
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-results-${{ matrix.grafana }}
+          path: e2e-results/
